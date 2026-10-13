@@ -20,7 +20,7 @@ Prérequis : Node.js ≥ 22, pnpm, Docker.
 ```bash
 pnpm install
 cp .env.example .env
-docker compose -f docker-compose.dev.yml up -d   # Postgres
+pnpm db:up   # Postgres via docker-compose.dev.yml
 pnpm db:migrate
 pnpm db:seed
 pnpm dev
@@ -37,7 +37,7 @@ pnpm dev
 
 ## Feuille de route
 
-- [ ] Phase 0 — Fondations (design system, layout)
+- [x] Phase 0 — Fondations (design system, layout)
 - [ ] Phase 1 — Comptes & structure
 - [ ] Phase 2 — Tâches (liste, kanban)
 - [ ] Phase 3 — Détail d'une tâche
