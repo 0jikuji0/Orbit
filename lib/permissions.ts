@@ -45,9 +45,9 @@ export async function requireWorkspace(slug: string, min: WorkspaceRole = "GUEST
   return { user, workspace: membership.workspace, role: membership.role };
 }
 
-const loadProjectAccess = cache(async (projectId: string, userId: string) =>
+const loadProjectAccess = cache(async (workspaceSlug: string, projectId: string, userId: string) =>
   db.project.findFirst({
-    where: { id: projectId, archivedAt: null },
+    where: { id: projectId, archivedAt: null, workspace: { slug: workspaceSlug } },
     include: {
       workspace: { include: { members: { where: { userId } } } },
       members: { where: { userId } },
@@ -55,9 +55,14 @@ const loadProjectAccess = cache(async (projectId: string, userId: string) =>
   }),
 );
 
-export async function requireProject(projectId: string, min: ProjectRole = "VIEWER") {
+/** Le projet doit appartenir au workspace de l'URL : `/{workspaceSlug}/projects/{projectId}`. */
+export async function requireProject(
+  workspaceSlug: string,
+  projectId: string,
+  min: ProjectRole = "VIEWER",
+) {
   const user = await requireUser();
-  const found = await loadProjectAccess(projectId, user.id);
+  const found = await loadProjectAccess(workspaceSlug, projectId, user.id);
   const workspaceRole = found?.workspace.members[0]?.role;
   if (!found || !workspaceRole) notFound();
 

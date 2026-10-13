@@ -1,7 +1,15 @@
 import { PrismaClient, type Priority } from "@prisma/client";
+import { hashPassword } from "better-auth/crypto";
 import { DEFAULT_STATES } from "../lib/default-states";
 
 const db = new PrismaClient();
+
+const DEMO_PASSWORD = "orbit-demo";
+
+const DEMO_USERS = [
+  { email: "alice@orbit.local", name: "Alice Martin" },
+  { email: "bob@orbit.local", name: "Bob Durand" },
+];
 
 const DEMO_ISSUES: ReadonlyArray<{ title: string; state: number; priority: Priority }> = [
   { title: "Mettre en place l'authentification", state: 3, priority: "HIGH" },
@@ -16,12 +24,25 @@ const DEMO_ISSUES: ReadonlyArray<{ title: string; state: number; priority: Prior
 
 async function main() {
   await db.workspace.deleteMany({ where: { slug: "demo" } });
-  await db.user.deleteMany({ where: { email: { in: ["alice@orbit.local", "bob@orbit.local"] } } });
+  await db.user.deleteMany({ where: { email: { in: DEMO_USERS.map((u) => u.email) } } });
 
-  const alice = await db.user.create({
-    data: { email: "alice@orbit.local", name: "Alice Martin" },
+  const password = await hashPassword(DEMO_PASSWORD);
+  const [alice, bob] = await Promise.all(
+    DEMO_USERS.map((u) =>
+      db.user.create({
+        data: { ...u, emailVerified: true },
+      }),
+    ),
+  );
+  if (!alice || !bob) throw new Error("Seed incohérent");
+  await db.account.createMany({
+    data: [alice, bob].map((u) => ({
+      userId: u.id,
+      accountId: u.id,
+      providerId: "credential",
+      password,
+    })),
   });
-  const bob = await db.user.create({ data: { email: "bob@orbit.local", name: "Bob Durand" } });
 
   const workspace = await db.workspace.create({
     data: {
@@ -82,7 +103,8 @@ async function main() {
   }
 
   console.log(
-    `Seed OK : workspace "${workspace.slug}", projet ${project.identifier}, ${DEMO_ISSUES.length} tâches`,
+    `Seed OK : workspace "${workspace.slug}", projet ${project.identifier}, ${DEMO_ISSUES.length} tâches.\n` +
+      `Connexion : ${DEMO_USERS.map((u) => u.email).join(" / ")} — mot de passe « ${DEMO_PASSWORD} »`,
   );
 }
 
