@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "@/lib/db";
 import { accessibleProjectsWhere, requireUser, requireWorkspace } from "@/lib/permissions";
+import { canManageWorkspaceMember, hasWorkspaceRole, invitableRoles } from "@/lib/roles";
 
 export async function listMyWorkspaces() {
   const user = await requireUser();
@@ -24,4 +25,72 @@ export async function getWorkspaceShell(slug: string) {
     }),
   ]);
   return { user, workspace, role, workspaces, projects };
+}
+
+export async function getWorkspaceSettings(slug: string) {
+  const { user, workspace, role } = await requireWorkspace(slug);
+  const isAdmin = hasWorkspaceRole(role, "ADMIN");
+  const [members, invites] = await Promise.all([
+    db.workspaceMember.findMany({
+      where: { workspaceId: workspace.id },
+      include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+      orderBy: { createdAt: "asc" },
+    }),
+    isAdmin
+      ? db.workspaceInvite.findMany({
+          where: { workspaceId: workspace.id, revokedAt: null, expiresAt: { gt: new Date() } },
+          include: { createdBy: { select: { name: true } } },
+          orderBy: { createdAt: "desc" },
+        })
+      : [],
+  ]);
+
+  return {
+    user,
+    workspace,
+    role,
+    isAdmin,
+    invitableRoles: invitableRoles(role),
+    members: members.map((m) => ({
+      ...m.user,
+      role: m.role,
+      // Rôles que l'utilisateur courant peut attribuer à ce membre (vide = non modifiable).
+      assignableRoles: (["OWNER", "ADMIN", "MEMBER", "GUEST"] as const).filter(
+        (r) => r === m.role || canManageWorkspaceMember(role, m.role, r),
+      ),
+      removable: m.userId !== user.id && canManageWorkspaceMember(role, m.role, null),
+    })),
+    invites: invites.map((i) => ({
+      id: i.id,
+      token: i.token,
+      role: i.role,
+      expiresAt: i.expiresAt,
+      createdBy: i.createdBy.name,
+    })),
+  };
+}
+
+/** Informations publiques d'une invitation, pour la page d'acceptation. */
+export async function getInvite(token: string) {
+  const user = await requireUser();
+  const invite = await db.workspaceInvite.findUnique({
+    where: { token },
+    include: {
+      workspace: {
+        select: {
+          name: true,
+          slug: true,
+          members: { where: { userId: user.id }, select: { role: true } },
+        },
+      },
+    },
+  });
+  if (!invite) return null;
+  return {
+    workspaceName: invite.workspace.name,
+    workspaceSlug: invite.workspace.slug,
+    role: invite.role,
+    valid: !invite.revokedAt && invite.expiresAt > new Date(),
+    alreadyMember: invite.workspace.members.length > 0,
+  };
 }

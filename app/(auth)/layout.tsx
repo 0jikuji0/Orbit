@@ -1,12 +1,7 @@
 import { Orbit } from "lucide-react";
-import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { getSession } from "@/lib/permissions";
 
-export default async function AuthLayout({ children }: { children: ReactNode }) {
-  // Déjà connecté : inutile d'afficher connexion / inscription.
-  if (await getSession()) redirect("/");
-
+export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh items-center justify-center p-4">
       <div className="w-full max-w-sm">
