@@ -4,6 +4,7 @@ import Link from "next/link";
 import { SettingsSection } from "@/components/layout/settings-section";
 import { Topbar } from "@/components/layout/topbar";
 import { ArchiveProjectButton } from "@/components/projects/archive-project-button";
+import { LabelsSettings } from "@/components/projects/labels-settings";
 import { ProjectMembers } from "@/components/projects/project-members";
 import { ProjectSettingsForm } from "@/components/projects/project-settings-form";
 import { StatesSettings } from "@/components/projects/states-settings";
@@ -17,7 +18,7 @@ export default async function ProjectSettingsPage({
   params: Promise<{ workspace: string; projectId: string }>;
 }) {
   const { workspace, projectId } = await params;
-  const { user, project, canEdit, members, candidates, states } = await getProjectSettings(
+  const { user, project, canEdit, members, candidates, states, labels } = await getProjectSettings(
     workspace,
     projectId,
   );
@@ -55,6 +56,14 @@ export default async function ProjectSettingsPage({
               workspaceSlug={workspace}
               projectId={project.id}
               states={states}
+              canEdit={canEdit}
+            />
+          </SettingsSection>
+          <SettingsSection title="Labels">
+            <LabelsSettings
+              workspaceSlug={workspace}
+              projectId={project.id}
+              labels={labels}
               canEdit={canEdit}
             />
           </SettingsSection>
