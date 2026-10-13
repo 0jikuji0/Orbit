@@ -1,9 +1,10 @@
 import { CircleDot } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { IssueList } from "@/components/issues/issue-list";
-import { IssuesToolbar } from "@/components/issues/issues-toolbar";
-import { Topbar } from "@/components/layout/topbar";
-import { getProjectIssues } from "@/server/queries/issues";
+import { IssuesView } from "@/components/issues/issues-view";
+import { getIssuesPage } from "@/server/queries/issues";
+
+export const metadata: Metadata = { title: "Tâches · Orbit" };
 
 export default async function IssuesPage({
   params,
@@ -11,24 +12,24 @@ export default async function IssuesPage({
   params: Promise<{ workspace: string; projectId: string }>;
 }) {
   const { workspace, projectId } = await params;
-  const { project, states, issues } = await getProjectIssues(workspace, projectId);
+  const { meta, issues, canEdit } = await getIssuesPage(workspace, projectId);
 
   return (
-    <>
-      <Topbar
-        breadcrumb={
-          <>
-            <Link href={`/${workspace}/projects`} className="text-text-muted hover:text-text">
-              {project.name}
-            </Link>
-            <span className="text-text-dim">/</span>
-            <CircleDot className="text-text-muted size-4" />
-            <span>Tâches</span>
-          </>
-        }
-        actions={<IssuesToolbar />}
-      />
-      <IssueList identifier={project.identifier} states={states} issues={issues} />
-    </>
+    <IssuesView
+      workspaceSlug={workspace}
+      meta={meta}
+      canEdit={canEdit}
+      initialIssues={issues}
+      breadcrumb={
+        <>
+          <Link href={`/${workspace}/projects`} className="text-text-muted hover:text-text">
+            {meta.name}
+          </Link>
+          <span className="text-text-dim">/</span>
+          <CircleDot className="text-text-muted size-4" />
+          <span>Tâches</span>
+        </>
+      }
+    />
   );
 }

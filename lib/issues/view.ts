@@ -168,3 +168,15 @@ export function serializeViewParams(view: ViewState): URLSearchParams {
   }
   return params;
 }
+
+/** Valeurs pré-remplies d'une nouvelle tâche créée depuis un groupe. */
+export function defaultsForGroup(groupBy: GroupBy, key: string) {
+  switch (groupBy) {
+    case "state":
+      return { stateId: key };
+    case "priority":
+      return { priority: key as Priority };
+    case "assignee":
+      return key === NONE ? {} : { assigneeIds: [key] };
+  }
+}
