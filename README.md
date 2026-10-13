@@ -26,14 +26,14 @@ pnpm db:seed
 pnpm dev
 ```
 
-| Commande | Rôle |
-|---|---|
-| `pnpm dev` | serveur de développement |
-| `pnpm db:migrate` | migrations Prisma |
-| `pnpm db:seed` | données de démo |
-| `pnpm lint` | ESLint + Prettier |
-| `pnpm test` | tests unitaires (Vitest) |
-| `pnpm test:e2e` | tests de bout en bout (Playwright) |
+| Commande          | Rôle                               |
+| ----------------- | ---------------------------------- |
+| `pnpm dev`        | serveur de développement           |
+| `pnpm db:migrate` | migrations Prisma                  |
+| `pnpm db:seed`    | données de démo                    |
+| `pnpm lint`       | ESLint + Prettier                  |
+| `pnpm test`       | tests unitaires (Vitest)           |
+| `pnpm test:e2e`   | tests de bout en bout (Playwright) |
 
 ## Feuille de route
 
