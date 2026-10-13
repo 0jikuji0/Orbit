@@ -26,6 +26,8 @@ pnpm db:seed
 pnpm dev
 ```
 
+Comptes de démo créés par le seed : `alice@orbit.local` / `bob@orbit.local`, mot de passe `orbit-demo`.
+
 | Commande          | Rôle                               |
 | ----------------- | ---------------------------------- |
 | `pnpm dev`        | serveur de développement           |
@@ -39,7 +41,7 @@ pnpm dev
 ## Feuille de route
 
 - [x] Phase 0 — Fondations (design system, layout)
-- [ ] Phase 1 — Comptes & structure
+- [x] Phase 1 — Comptes & structure
 - [ ] Phase 2 — Tâches (liste, kanban)
 - [ ] Phase 3 — Détail d'une tâche
 - [ ] Phase 4 — Organisation (cycles, modules, vues)

@@ -7,14 +7,68 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Authentification (better-auth) ──────────────────────────────────
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  password              String?
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
 // ─── Comptes & structure ──────────────────────────────────────────────
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  avatarUrl String?
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  name          String
+  avatarUrl     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  sessions       Session[]
+  accounts       Account[]
+  invitesCreated WorkspaceInvite[]
 
   workspaces     WorkspaceMember[]
   projects       ProjectMember[]
@@ -36,6 +90,7 @@ model Workspace {
 
   members  WorkspaceMember[]
   projects Project[]
+  invites  WorkspaceInvite[]
 }
 
 enum WorkspaceRole {
@@ -56,6 +111,23 @@ model WorkspaceMember {
 
   @@id([workspaceId, userId])
   @@index([userId])
+}
+
+/// Lien d'invitation réutilisable jusqu'à expiration ou révocation.
+model WorkspaceInvite {
+  id          String        @id @default(cuid())
+  workspaceId String
+  token       String        @unique
+  role        WorkspaceRole @default(MEMBER)
+  createdById String
+  createdAt   DateTime      @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
 }
 
 model Project {
