@@ -70,12 +70,14 @@ function NavLink({
 function ProjectNav({ base, project }: { base: string; project: SidebarProject }) {
   const pathname = usePathname();
   const href = `${base}/projects/${project.id}`;
-  const [open, setOpen] = useState(() => pathname.startsWith(href));
+  // Déplié automatiquement quand on est dans le projet, sauf si l'utilisateur a choisi.
+  const [userOpen, setUserOpen] = useState<boolean | null>(null);
+  const open = userOpen ?? pathname.startsWith(href);
   return (
     <div>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setUserOpen(!open)}
         aria-expanded={open}
         className="text-text hover:bg-surface-2 flex h-7 w-full cursor-pointer items-center gap-1.5 px-2 text-sm"
       >
