@@ -8,7 +8,8 @@ const compat = new FlatCompat({ baseDirectory: dirname(fileURLToPath(import.meta
 const config = [
   {
     ignores: [
-      ".next/**", ".next-e2e/**",
+      ".next/**",
+      ".next-e2e/**",
       "node_modules/**",
       "next-env.d.ts",
       "playwright-report/**",
