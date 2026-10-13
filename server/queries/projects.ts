@@ -16,6 +16,34 @@ export async function listProjects(workspaceSlug: string) {
 }
 
 export async function getProjectSettings(workspaceSlug: string, projectId: string) {
-  const { user, project, role, workspaceRole } = await requireProject(workspaceSlug, projectId);
-  return { user, project, role, workspaceRole, canEdit: role === "ADMIN" };
+  const { user, project, workspace, role, workspaceRole } = await requireProject(
+    workspaceSlug,
+    projectId,
+  );
+  const [members, workspaceMembers] = await Promise.all([
+    db.projectMember.findMany({
+      where: { projectId: project.id },
+      include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+      orderBy: { user: { name: "asc" } },
+    }),
+    db.workspaceMember.findMany({
+      where: { workspaceId: workspace.id },
+      include: { user: { select: { id: true, name: true, email: true } } },
+      orderBy: { user: { name: "asc" } },
+    }),
+  ]);
+  const memberIds = new Set(members.map((m) => m.userId));
+  const candidates = workspaceMembers
+    .filter((m) => !memberIds.has(m.userId))
+    .map((m) => ({ ...m.user, workspaceRole: m.role }));
+
+  return {
+    user,
+    project,
+    role,
+    workspaceRole,
+    canEdit: role === "ADMIN",
+    members: members.map((m) => ({ ...m.user, role: m.role })),
+    candidates,
+  };
 }

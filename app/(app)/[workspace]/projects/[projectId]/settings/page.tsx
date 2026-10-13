@@ -4,6 +4,7 @@ import Link from "next/link";
 import { SettingsSection } from "@/components/layout/settings-section";
 import { Topbar } from "@/components/layout/topbar";
 import { ArchiveProjectButton } from "@/components/projects/archive-project-button";
+import { ProjectMembers } from "@/components/projects/project-members";
 import { ProjectSettingsForm } from "@/components/projects/project-settings-form";
 import { getProjectSettings } from "@/server/queries/projects";
 
@@ -15,7 +16,10 @@ export default async function ProjectSettingsPage({
   params: Promise<{ workspace: string; projectId: string }>;
 }) {
   const { workspace, projectId } = await params;
-  const { project, canEdit } = await getProjectSettings(workspace, projectId);
+  const { user, project, canEdit, members, candidates } = await getProjectSettings(
+    workspace,
+    projectId,
+  );
 
   return (
     <>
@@ -41,6 +45,19 @@ export default async function ProjectSettingsPage({
             description={!canEdit && "Seuls les administrateurs du projet peuvent le modifier."}
           >
             <ProjectSettingsForm workspaceSlug={workspace} project={project} canEdit={canEdit} />
+          </SettingsSection>
+          <SettingsSection
+            title="Membres"
+            description="Les propriétaires et admins de l'espace ont accès à tous les projets."
+          >
+            <ProjectMembers
+              workspaceSlug={workspace}
+              projectId={project.id}
+              currentUserId={user.id}
+              canEdit={canEdit}
+              members={members}
+              candidates={candidates}
+            />
           </SettingsSection>
           {canEdit && (
             <SettingsSection
