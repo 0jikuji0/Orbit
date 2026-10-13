@@ -1,1 +1,123 @@
 @import "tailwindcss";
+
+/* ─── Design tokens Orbit ─────────────────────────────────────────────
+   Sombre, carré, sobre. Aucune couleur ni radius en dur dans les composants :
+   utiliser uniquement ces tokens (via les utilitaires Tailwind ci-dessous). */
+:root {
+  --bg: #0b0b0c;
+  --surface: #121214;
+  --surface-2: #18181b;
+  --surface-3: #202024;
+  --border: #33333a;
+  --border-strong: #52525b;
+  --text: #ececef;
+  --text-muted: #a1a1aa;
+  --text-dim: #71717a;
+  --accent: #4c8dff;
+  --accent-fg: #ffffff;
+  --danger: #ef4444;
+  --success: #22c55e;
+  --warning: #f59e0b;
+
+  --prio-urgent: #ef4444;
+  --prio-high: #f97316;
+  --prio-medium: #eab308;
+  --prio-low: #3b82f6;
+  --prio-none: #71717a;
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  /* On retire la palette, les rayons et les ombres par défaut de Tailwind :
+     seuls les tokens ci-dessous existent. */
+  --color-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-dim: var(--text-dim);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-prio-urgent: var(--prio-urgent);
+  --color-prio-high: var(--prio-high);
+  --color-prio-medium: var(--prio-medium);
+  --color-prio-low: var(--prio-low);
+  --color-prio-none: var(--prio-none);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  /* Échelle typographique : 12 (labels) · 13 (défaut) · 14–16 (titres) */
+  --text-*: initial;
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 13px;
+  --text-sm--line-height: 20px;
+  --text-base: 14px;
+  --text-base--line-height: 20px;
+  --text-lg: 16px;
+  --text-lg--line-height: 24px;
+
+  /* Grille de 4px (défaut Tailwind : 0.25rem) */
+  --spacing: 4px;
+
+  --default-transition-duration: 100ms;
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
+
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 20px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-fg);
+  }
+
+  :focus-visible {
+    outline: 1px solid var(--accent);
+    outline-offset: 0;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
