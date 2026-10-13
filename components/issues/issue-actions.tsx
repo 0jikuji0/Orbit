@@ -14,6 +14,7 @@ export function IssueActions({ issueId, onRename }: { issueId: string; onRename:
       <DropdownTrigger
         aria-label="Actions"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
         className="text-text-dim hover:bg-surface-3 hover:text-text flex size-6 shrink-0 cursor-pointer items-center justify-center outline-none"
       >
         <MoreHorizontal className="size-4" />

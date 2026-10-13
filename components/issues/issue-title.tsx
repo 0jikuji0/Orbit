@@ -36,6 +36,7 @@ export function IssueTitle({
       onClick={(e) => e.stopPropagation()}
       onBlur={commit}
       onKeyDown={(e) => {
+        e.stopPropagation(); // ne pas déclencher le glisser-déposer clavier du kanban
         if (e.key === "Enter") commit();
         if (e.key === "Escape") {
           setValue(title);

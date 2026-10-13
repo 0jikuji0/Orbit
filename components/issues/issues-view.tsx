@@ -10,6 +10,7 @@ import type { IssueDTO, ProjectMeta } from "@/lib/issues/types";
 import { filterIssues, groupIssues, type Layout } from "@/lib/issues/view";
 import { cn } from "@/lib/utils";
 import { CreateIssueDialog } from "./create-issue-dialog";
+import { IssueKanban } from "./issue-kanban";
 import { IssueList } from "./issue-list";
 import { ActiveFilters, DisplayMenu, FiltersMenu } from "./issues-filters";
 import { IssuesProvider, useIssuesContext, type NewIssueDefaults } from "./issues-context";
@@ -137,7 +138,11 @@ function IssuesBody({
         }
       />
       <ActiveFilters filters={view.filters} onChange={(filters) => setView({ filters })} />
-      <IssueList groups={groups} groupBy={view.groupBy} />
+      {layout === "kanban" ? (
+        <IssueKanban groups={groups} groupBy={view.groupBy} />
+      ) : (
+        <IssueList groups={groups} groupBy={view.groupBy} />
+      )}
     </>
   );
 }

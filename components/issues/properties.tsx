@@ -52,6 +52,7 @@ function Trigger({
       disabled={!canEdit}
       aria-label={label}
       onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}
       className={cn(variant === "compact" ? compactTrigger : fullTrigger, className)}
     >
       {children}
@@ -262,6 +263,7 @@ export function DatePicker({
         disabled={!canEdit}
         aria-label={label}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
         className={cn(
           variant === "compact" ? compactTrigger : fullTrigger,
           "font-mono",
