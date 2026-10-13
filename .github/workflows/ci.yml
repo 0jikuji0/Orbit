@@ -8,6 +8,10 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://orbit:orbit@localhost:5432/orbit
+      BETTER_AUTH_URL: http://localhost:3000
+      BETTER_AUTH_SECRET: ci-only-secret-not-used-in-production-000
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
