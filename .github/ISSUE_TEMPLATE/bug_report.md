@@ -6,9 +6,7 @@ labels: bug
 
 **Description**
 
-**Étapes pour reproduire**
-1.
-2.
+**Étapes pour reproduire** 1. 2.
 
 **Comportement attendu**
 
