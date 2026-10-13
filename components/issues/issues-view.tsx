@@ -11,6 +11,7 @@ import { filterIssues, groupIssues, type Layout } from "@/lib/issues/view";
 import { cn } from "@/lib/utils";
 import { CreateIssueDialog } from "./create-issue-dialog";
 import { IssueList } from "./issue-list";
+import { ActiveFilters, DisplayMenu, FiltersMenu } from "./issues-filters";
 import { IssuesProvider, useIssuesContext, type NewIssueDefaults } from "./issues-context";
 import { useIssues } from "./use-issues";
 import { useView } from "./use-view";
@@ -121,6 +122,8 @@ function IssuesBody({
                 </Tooltip>
               ))}
             </div>
+            <FiltersMenu filters={view.filters} onChange={(filters) => setView({ filters })} />
+            <DisplayMenu groupBy={view.groupBy} onChange={(groupBy) => setView({ groupBy })} />
             {canEdit && (
               <Button size="sm" variant="primary" onClick={() => openCreate()}>
                 <Plus />
@@ -133,6 +136,7 @@ function IssuesBody({
           </>
         }
       />
+      <ActiveFilters filters={view.filters} onChange={(filters) => setView({ filters })} />
       <IssueList groups={groups} groupBy={view.groupBy} />
     </>
   );
