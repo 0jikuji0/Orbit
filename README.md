@@ -29,6 +29,7 @@ pnpm dev
 | Commande          | Rôle                               |
 | ----------------- | ---------------------------------- |
 | `pnpm dev`        | serveur de développement           |
+| `pnpm db:up`      | démarre Postgres (Docker)          |
 | `pnpm db:migrate` | migrations Prisma                  |
 | `pnpm db:seed`    | données de démo                    |
 | `pnpm lint`       | ESLint + Prettier                  |
