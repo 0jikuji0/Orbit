@@ -1,0 +1,54 @@
+# Orbit
+
+Gestionnaire de projets **open source et auto-hébergé** pour petites équipes (1–20 personnes), inspiré de [Plane](https://plane.so) et Linear.
+
+- Espaces de travail → projets → tâches (états, priorités, labels, assignés)
+- Vues Liste, Kanban, Calendrier, Tableau
+- Cycles (sprints) et modules
+- Déploiement en une commande : `docker compose up -d`
+
+> 🚧 Projet en cours de développement — voir la [feuille de route](#feuille-de-route).
+
+## Stack
+
+Next.js 15 · TypeScript · Tailwind CSS v4 · PostgreSQL 16 · Prisma · better-auth · TanStack Query · Tiptap · dnd-kit
+
+## Développement
+
+Prérequis : Node.js ≥ 22, pnpm, Docker.
+
+```bash
+pnpm install
+cp .env.example .env
+docker compose -f docker-compose.dev.yml up -d   # Postgres
+pnpm db:migrate
+pnpm db:seed
+pnpm dev
+```
+
+| Commande | Rôle |
+|---|---|
+| `pnpm dev` | serveur de développement |
+| `pnpm db:migrate` | migrations Prisma |
+| `pnpm db:seed` | données de démo |
+| `pnpm lint` | ESLint + Prettier |
+| `pnpm test` | tests unitaires (Vitest) |
+| `pnpm test:e2e` | tests de bout en bout (Playwright) |
+
+## Feuille de route
+
+- [ ] Phase 0 — Fondations (design system, layout)
+- [ ] Phase 1 — Comptes & structure
+- [ ] Phase 2 — Tâches (liste, kanban)
+- [ ] Phase 3 — Détail d'une tâche
+- [ ] Phase 4 — Organisation (cycles, modules, vues)
+- [ ] Phase 5 — Suivi (inbox, recherche, analytics)
+- [ ] Phase 6 — Production (Docker, Caddy, sauvegardes)
+
+## Contribuer
+
+Les contributions sont les bienvenues : lisez [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Licence
+
+[MIT](LICENSE)
