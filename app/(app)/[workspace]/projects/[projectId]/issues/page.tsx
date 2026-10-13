@@ -1,6 +1,7 @@
 import { CircleDot } from "lucide-react";
 import Link from "next/link";
 import { IssueList } from "@/components/issues/issue-list";
+import { IssuesToolbar } from "@/components/issues/issues-toolbar";
 import { Topbar } from "@/components/layout/topbar";
 import { getProjectIssues } from "@/server/queries/issues";
 
@@ -25,6 +26,7 @@ export default async function IssuesPage({
             <span>Tâches</span>
           </>
         }
+        actions={<IssuesToolbar />}
       />
       <IssueList identifier={project.identifier} states={states} issues={issues} />
     </>
