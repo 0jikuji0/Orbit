@@ -11,8 +11,10 @@ import { filterIssues, groupIssues, type Layout, type ViewState } from "@/lib/is
 import { cn } from "@/lib/utils";
 import { CreateIssueDialog } from "./create-issue-dialog";
 import { IssueDetail } from "./detail/issue-detail";
+import { IssueCalendar } from "./issue-calendar";
 import { IssueKanban } from "./issue-kanban";
 import { IssueList } from "./issue-list";
+import { IssueTable } from "./issue-table";
 import { ActiveFilters, DisplayMenu, FiltersMenu } from "./issues-filters";
 import { IssuesProvider, useIssuesContext, type NewIssueDefaults } from "./issues-context";
 import { useIssues } from "./use-issues";
@@ -21,8 +23,8 @@ import { useView } from "./use-view";
 const LAYOUTS: { id: Layout; label: string; icon: typeof List; available: boolean }[] = [
   { id: "list", label: "Liste", icon: List, available: true },
   { id: "kanban", label: "Kanban", icon: Columns3, available: true },
-  { id: "calendar", label: "Calendrier — bientôt (phase 4)", icon: Calendar, available: false },
-  { id: "table", label: "Tableau — bientôt (phase 4)", icon: Table, available: false },
+  { id: "calendar", label: "Calendrier", icon: Calendar, available: true },
+  { id: "table", label: "Tableau", icon: Table, available: true },
 ];
 
 function isTyping(target: EventTarget | null) {
@@ -136,7 +138,8 @@ function IssuesBody({
     () => groupIssues(filterIssues(scoped, view.filters), view.groupBy, meta),
     [scoped, view.filters, view.groupBy, meta],
   );
-  const layout = view.layout === "kanban" ? "kanban" : "list";
+  const layout = view.layout;
+  const filtered = useMemo(() => filterIssues(scoped, view.filters), [scoped, view.filters]);
 
   return (
     <>
@@ -185,11 +188,10 @@ function IssuesBody({
       <ActiveFilters filters={view.filters} onChange={(filters) => setView({ filters })} />
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col">
-          {layout === "kanban" ? (
-            <IssueKanban groups={groups} groupBy={view.groupBy} />
-          ) : (
-            <IssueList groups={groups} groupBy={view.groupBy} />
-          )}
+          {layout === "kanban" && <IssueKanban groups={groups} groupBy={view.groupBy} />}
+          {layout === "list" && <IssueList groups={groups} groupBy={view.groupBy} />}
+          {layout === "calendar" && <IssueCalendar issues={filtered} />}
+          {layout === "table" && <IssueTable issues={filtered} />}
         </div>
         {view.peek && (
           <aside
