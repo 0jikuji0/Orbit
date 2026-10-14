@@ -2,6 +2,7 @@ import "server-only";
 import { db } from "@/lib/db";
 import { accessibleProjectsWhere, requireUser, requireWorkspace } from "@/lib/permissions";
 import { canManageWorkspaceMember, hasWorkspaceRole, invitableRoles } from "@/lib/roles";
+import { countUnread } from "./inbox";
 
 export async function listMyWorkspaces() {
   const user = await requireUser();
@@ -16,15 +17,16 @@ export async function listMyWorkspaces() {
 /** Données du cadre de l'application : workspace courant, workspaces de l'utilisateur, projets visibles. */
 export async function getWorkspaceShell(slug: string) {
   const { user, workspace, role } = await requireWorkspace(slug);
-  const [workspaces, projects] = await Promise.all([
+  const [workspaces, projects, unreadCount] = await Promise.all([
     listMyWorkspaces(),
     db.project.findMany({
       where: accessibleProjectsWhere(workspace.id, user.id, role),
       select: { id: true, identifier: true, name: true, icon: true },
       orderBy: { createdAt: "asc" },
     }),
+    countUnread(slug),
   ]);
-  return { user, workspace, role, workspaces, projects };
+  return { user, workspace, role, workspaces, projects, unreadCount };
 }
 
 export async function getWorkspaceSettings(slug: string) {

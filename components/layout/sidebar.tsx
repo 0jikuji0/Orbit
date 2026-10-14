@@ -15,7 +15,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useTransition, type ComponentType } from "react";
+import { useState, useTransition, type ComponentType, type ReactNode } from "react";
+import { UnreadBadge } from "@/components/inbox/unread-badge";
 import { ProjectIcon } from "@/components/projects/project-icon";
 import { Avatar } from "@/components/ui/avatar";
 import {
@@ -37,6 +38,7 @@ type SidebarProps = {
   workspaces: { slug: string; name: string }[];
   projects: SidebarProject[];
   user: { name: string; email: string; image?: string | null };
+  unreadCount: number;
 };
 
 function NavLink({
@@ -44,11 +46,13 @@ function NavLink({
   icon: Icon,
   children,
   indent = false,
+  badge,
 }: {
   href: string;
   icon: ComponentType<{ className?: string }>;
   children: string;
   indent?: boolean;
+  badge?: ReactNode;
 }) {
   const pathname = usePathname();
   const active = pathname === href || pathname.startsWith(`${href}/`);
@@ -63,6 +67,7 @@ function NavLink({
     >
       <Icon className="size-4 shrink-0" />
       <span className="truncate">{children}</span>
+      {badge}
     </Link>
   );
 }
@@ -112,7 +117,7 @@ function ProjectNav({ base, project }: { base: string; project: SidebarProject }
   );
 }
 
-export function Sidebar({ workspace, workspaces, projects, user }: SidebarProps) {
+export function Sidebar({ workspace, workspaces, projects, user, unreadCount }: SidebarProps) {
   const base = `/${workspace.slug}`;
   const [, startTransition] = useTransition();
   return (
@@ -151,7 +156,11 @@ export function Sidebar({ workspace, workspaces, projects, user }: SidebarProps)
           <NavLink href={`${base}/my-issues`} icon={UserCheck}>
             Mes tâches
           </NavLink>
-          <NavLink href={`${base}/inbox`} icon={Inbox}>
+          <NavLink
+            href={`${base}/inbox`}
+            icon={Inbox}
+            badge={<UnreadBadge workspaceSlug={workspace.slug} initial={unreadCount} />}
+          >
             Inbox
           </NavLink>
         </div>

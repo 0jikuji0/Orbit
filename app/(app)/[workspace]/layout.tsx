@@ -13,7 +13,7 @@ export default async function WorkspaceLayout({
   params: Promise<{ workspace: string }>;
 }) {
   const { workspace: slug } = await params;
-  const { user, workspace, workspaces, projects } = await getWorkspaceShell(slug);
+  const { user, workspace, workspaces, projects, unreadCount } = await getWorkspaceShell(slug);
 
   return (
     <QueryProvider>
@@ -24,6 +24,7 @@ export default async function WorkspaceLayout({
             workspaces={workspaces}
             projects={projects}
             user={{ name: user.name, email: user.email, image: user.image }}
+            unreadCount={unreadCount}
           />
           <main className="flex min-w-0 flex-1 flex-col">{children}</main>
           <CommandPalette workspaceSlug={workspace.slug} projects={projects} />
