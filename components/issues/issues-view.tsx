@@ -1,6 +1,7 @@
 "use client";
 
 import { Calendar, Columns3, List, Plus, Table } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Topbar } from "@/components/layout/topbar";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { Tooltip } from "@/components/ui/tooltip";
 import type { IssueDTO, ProjectMeta } from "@/lib/issues/types";
 import { filterIssues, groupIssues, type Layout, type ViewState } from "@/lib/issues/view";
+import { NEW_ISSUE_EVENT, isTypingTarget } from "@/lib/shortcuts";
 import { cn } from "@/lib/utils";
 import { CreateIssueDialog } from "./create-issue-dialog";
 import { IssueDetail } from "./detail/issue-detail";
@@ -27,13 +29,6 @@ const LAYOUTS: { id: Layout; label: string; icon: typeof List; available: boolea
   { id: "calendar", label: "Calendrier", icon: Calendar, available: true },
   { id: "table", label: "Tableau", icon: Table, available: true },
 ];
-
-function isTyping(target: EventTarget | null) {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
-  );
-}
 
 type IssuesViewProps = {
   workspaceSlug: string;
@@ -109,24 +104,29 @@ function IssuesBody({
   const { data: issues } = useIssues(initialIssues);
   const { meta, canEdit, openCreate } = useIssuesContext();
 
-  // Raccourci « C » : nouvelle tâche
+  // Raccourci « C » et palette de commandes : « Nouvelle tâche »
   useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key.toLowerCase() !== "c" || e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target))
-        return;
-      if (document.querySelector("[role=dialog],[role=menu]")) return;
+    // Annule l'événement pour signaler à la palette que la création est prise en charge ici.
+    const onNew = (e: Event) => {
       e.preventDefault();
       openCreate();
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    };
+    window.addEventListener(NEW_ISSUE_EVENT, onNew);
+    return () => window.removeEventListener(NEW_ISSUE_EVENT, onNew);
   }, [openCreate]);
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get("new") !== "1") return;
+    openCreate();
+    setView({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- une seule fois à l'arrivée sur la page
+  }, []);
 
   // Échap : fermer le panneau latéral (si aucun menu ni modale n'est ouvert).
   useEffect(() => {
     if (!view.peek) return;
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== "Escape" || isTyping(e.target)) return;
+      if (e.key !== "Escape" || isTypingTarget(e.target)) return;
       if (document.querySelector("[role=dialog],[role=menu],[role=listbox]")) return;
       setView({ peek: null });
     }
