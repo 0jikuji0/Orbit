@@ -14,6 +14,8 @@ export const auth = betterAuth({
     autoSignIn: true,
   },
   user: { fields: { image: "avatarUrl" } },
+  // Limitation anti-bruteforce (active par défaut en production) ; désactivable pour les tests e2e.
+  ...(process.env.AUTH_RATE_LIMIT_DISABLED === "1" && { rateLimit: { enabled: false } }),
   session: {
     expiresIn: 60 * 60 * 24 * 30, // 30 jours
     updateAge: 60 * 60 * 24, // prolongée au plus une fois par jour
