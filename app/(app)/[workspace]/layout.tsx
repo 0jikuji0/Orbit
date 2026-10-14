@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { CommandPalette } from "@/components/layout/command-palette";
 import { Sidebar } from "@/components/layout/sidebar";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,6 +26,7 @@ export default async function WorkspaceLayout({
             user={{ name: user.name, email: user.email, image: user.image }}
           />
           <main className="flex min-w-0 flex-1 flex-col">{children}</main>
+          <CommandPalette workspaceSlug={workspace.slug} projects={projects} />
         </div>
       </TooltipProvider>
     </QueryProvider>

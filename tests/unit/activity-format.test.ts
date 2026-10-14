@@ -11,6 +11,8 @@ describe("describeActivity", () => {
     ["labels", "bug", null, "a retiré les labels (bug)"],
     ["dueDate", null, "2026-10-20", "a défini l'échéance : 20 octobre 2026"],
     ["description", null, null, "a modifié la description"],
+    ["cycle", null, "Sprint 1", "a défini le cycle : Sprint 1"],
+    ["module", "Auth", null, "a retiré le module (Auth)"],
     ["parent", null, "ORB-3", "a rattaché la tâche à ORB-3"],
     ["parent", "ORB-3", null, "a détaché la tâche de ORB-3"],
     ["attachment", null, "plan.pdf", "a ajouté la pièce jointe plan.pdf"],

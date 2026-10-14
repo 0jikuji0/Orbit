@@ -4,7 +4,17 @@ import { createContext, useContext, type ReactNode } from "react";
 import type { IssueDTO, ProjectMeta } from "@/lib/issues/types";
 
 export type NewIssueDefaults = Partial<
-  Pick<IssueDTO, "stateId" | "priority" | "assigneeIds" | "labelIds" | "parentId">
+  Pick<
+    IssueDTO,
+    | "stateId"
+    | "priority"
+    | "assigneeIds"
+    | "labelIds"
+    | "parentId"
+    | "cycleId"
+    | "moduleId"
+    | "dueDate"
+  >
 >;
 
 type IssuesContextValue = {

@@ -23,6 +23,9 @@ export type IssueFilters = {
   /** ids d'utilisateurs, ou `NONE` pour « non assigné » */
   assignee: string[];
   label: string[];
+  /** ids, ou `NONE` pour « aucun » */
+  cycle: string[];
+  module: string[];
 };
 
 export type ViewState = {
@@ -33,7 +36,18 @@ export type ViewState = {
   peek: string | null;
 };
 
-export const EMPTY_FILTERS: IssueFilters = { state: [], priority: [], assignee: [], label: [] };
+export const EMPTY_FILTERS: IssueFilters = {
+  state: [],
+  priority: [],
+  assignee: [],
+  label: [],
+  cycle: [],
+  module: [],
+};
+
+/** `null` (aucun) correspond à la valeur de filtre `NONE`. */
+const matchesOne = (selected: string[], value: string | null) =>
+  !selected.length || selected.includes(value ?? NONE);
 
 export function hasActiveFilters(filters: IssueFilters) {
   return Object.values(filters).some((v) => v.length > 0);
@@ -53,7 +67,7 @@ export function filterIssues(issues: IssueDTO[], filters: IssueFilters): IssueDT
     if (filters.label.length && !issue.labelIds.some((id) => filters.label.includes(id))) {
       return false;
     }
-    return true;
+    return matchesOne(filters.cycle, issue.cycleId) && matchesOne(filters.module, issue.moduleId);
   });
 }
 
@@ -123,6 +137,8 @@ export type IssuePatch = Partial<
     | "dueDate"
     | "sortOrder"
     | "parentId"
+    | "cycleId"
+    | "moduleId"
   >
 > & { descriptionJson?: RichNode | null };
 
@@ -163,6 +179,8 @@ export function parseViewParams(params: URLSearchParams): ViewState {
       ),
       assignee: list(params.get("assignee")),
       label: list(params.get("label")),
+      cycle: list(params.get("cycle")),
+      module: list(params.get("module")),
     },
     peek: params.get("peek") || null,
   };

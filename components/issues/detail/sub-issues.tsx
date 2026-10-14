@@ -42,6 +42,8 @@ export function SubIssues({
       startDate: null,
       dueDate: null,
       parentId: parent.id,
+      cycleId: parent.cycleId,
+      moduleId: parent.moduleId,
     });
     setTitle("");
   }

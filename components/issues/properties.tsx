@@ -1,7 +1,7 @@
 "use client";
 
 import type { Priority } from "@prisma/client";
-import { CalendarDays, CircleDashed, Tag, UserRound, X } from "lucide-react";
+import { Boxes, CalendarDays, CircleDashed, RefreshCcw, Tag, UserRound, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -28,10 +28,12 @@ import { StateDot } from "./state-dot";
  * - `compact` : déclencheur minimal (lignes de liste, cartes kanban)
  * - `full` : bouton avec libellé (modale de création, panneau de détail)
  */
-type Variant = "compact" | "full";
+type Variant = "compact" | "full" | "cell";
 
 const compactTrigger =
   "inline-flex h-6 min-w-6 shrink-0 cursor-pointer items-center justify-center gap-1 px-1 text-xs text-text-muted outline-none hover:bg-surface-3 disabled:cursor-default disabled:hover:bg-transparent";
+const cellTrigger =
+  "flex h-9 w-full min-w-0 cursor-pointer items-center gap-1.5 px-2 text-xs text-text outline-none hover:bg-surface-3 disabled:cursor-default disabled:hover:bg-transparent";
 const fullTrigger =
   "inline-flex h-7 shrink-0 cursor-pointer items-center gap-1.5 border border-border bg-surface-2 px-2 text-xs text-text outline-none hover:bg-surface-3 disabled:cursor-default";
 
@@ -53,7 +55,10 @@ function Trigger({
       aria-label={label}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
-      className={cn(variant === "compact" ? compactTrigger : fullTrigger, className)}
+      className={cn(
+        variant === "compact" ? compactTrigger : variant === "cell" ? cellTrigger : fullTrigger,
+        className,
+      )}
     >
       {children}
     </DropdownTrigger>
@@ -78,7 +83,7 @@ export function StatePicker({
     <Dropdown>
       <Trigger variant={variant} label={`État : ${current?.name ?? "?"}`}>
         {current ? <StateDot color={current.color} /> : <CircleDashed className="size-3.5" />}
-        {variant === "full" && (current?.name ?? "État")}
+        {variant !== "compact" && (current?.name ?? "État")}
       </Trigger>
       <DropdownContent onClick={(e) => e.stopPropagation()}>
         {meta.states.map((s) => (
@@ -107,7 +112,7 @@ export function PriorityPicker({
     <Dropdown>
       <Trigger variant={variant} label={`Priorité : ${PRIORITY_LABELS[value]}`}>
         <PriorityIcon priority={value} />
-        {variant === "full" && PRIORITY_LABELS[value]}
+        {variant !== "compact" && PRIORITY_LABELS[value]}
       </Trigger>
       <DropdownContent onClick={(e) => e.stopPropagation()}>
         {PRIORITIES.map((p) => (
@@ -150,7 +155,7 @@ export function AssigneesPicker({
         ) : (
           <UserRound className="size-3.5" />
         )}
-        {variant === "full" && (selected.length ? label : "Assignés")}
+        {variant !== "compact" && (selected.length ? label : "Assignés")}
       </Trigger>
       <DropdownContent className="w-56" onClick={(e) => e.stopPropagation()}>
         <DropdownLabel>Membres du projet</DropdownLabel>
@@ -203,7 +208,7 @@ export function LabelsPicker({
         ) : (
           <>
             <Tag className="size-3.5" />
-            {variant === "full" && "Labels"}
+            {variant !== "compact" && "Labels"}
           </>
         )}
       </Trigger>
@@ -265,15 +270,19 @@ export function DatePicker({
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
         className={cn(
-          variant === "compact" ? compactTrigger : fullTrigger,
+          variant === "compact" ? compactTrigger : variant === "cell" ? cellTrigger : fullTrigger,
           "font-mono",
           highlightOverdue && value && isOverdue(value) && "text-danger",
         )}
       >
         <CalendarDays className="size-3.5" />
-        {value
-          ? shortDate.format(value)
-          : variant === "full" && <span className="font-sans">{label}</span>}
+        {value ? (
+          shortDate.format(value)
+        ) : variant === "full" ? (
+          <span className="font-sans">{label}</span>
+        ) : (
+          variant === "cell" && <span className="text-text-dim">—</span>
+        )}
       </PopoverTrigger>
       <PopoverContent
         className="flex w-auto min-w-0 items-center gap-2 p-2"
@@ -298,5 +307,97 @@ export function DatePicker({
         )}
       </PopoverContent>
     </Popover>
+  );
+}
+
+// ─── Cycle et module ────────────────────────────────────────────────────
+
+function SinglePicker({
+  value,
+  onChange,
+  variant,
+  items,
+  icon: Icon,
+  title,
+  empty,
+}: {
+  value: string | null;
+  onChange: (id: string | null) => void;
+  variant: Variant;
+  items: { id: string; name: string }[];
+  icon: typeof Boxes;
+  title: string;
+  empty: string;
+}) {
+  const current = items.find((i) => i.id === value);
+  return (
+    <Dropdown>
+      <Trigger variant={variant} label={`${title} : ${current?.name ?? empty}`}>
+        <Icon className="size-3.5" />
+        {variant !== "compact" && (current?.name ?? title)}
+        {variant === "compact" && current && (
+          <span className="max-w-24 truncate">{current.name}</span>
+        )}
+      </Trigger>
+      <DropdownContent className="w-56" onClick={(e) => e.stopPropagation()}>
+        <DropdownItem onSelect={() => onChange(null)}>
+          <X />
+          {empty}
+        </DropdownItem>
+        {items.length === 0 && <DropdownLabel>Aucun élément dans ce projet</DropdownLabel>}
+        {items.map((item) => (
+          <DropdownItem key={item.id} onSelect={() => onChange(item.id)}>
+            <Icon />
+            <span className="truncate">{item.name}</span>
+          </DropdownItem>
+        ))}
+      </DropdownContent>
+    </Dropdown>
+  );
+}
+
+export function CyclePicker({
+  value,
+  onChange,
+  variant = "compact",
+}: {
+  value: string | null;
+  onChange: (cycleId: string | null) => void;
+  variant?: Variant;
+}) {
+  const { meta } = useIssuesContext();
+  return (
+    <SinglePicker
+      value={value}
+      onChange={onChange}
+      variant={variant}
+      items={meta.cycles}
+      icon={RefreshCcw}
+      title="Cycle"
+      empty="Aucun cycle"
+    />
+  );
+}
+
+export function ModulePicker({
+  value,
+  onChange,
+  variant = "compact",
+}: {
+  value: string | null;
+  onChange: (moduleId: string | null) => void;
+  variant?: Variant;
+}) {
+  const { meta } = useIssuesContext();
+  return (
+    <SinglePicker
+      value={value}
+      onChange={onChange}
+      variant={variant}
+      items={meta.modules}
+      icon={Boxes}
+      title="Module"
+      empty="Aucun module"
+    />
   );
 }

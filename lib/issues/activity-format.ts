@@ -42,6 +42,10 @@ export function describeActivity(
       return change("la date de début", formatDate(oldValue), formatDate(newValue));
     case "dueDate":
       return change("l'échéance", formatDate(oldValue), formatDate(newValue));
+    case "cycle":
+      return change("le cycle", oldValue, newValue);
+    case "module":
+      return change("le module", oldValue, newValue);
     case "description":
       return "a modifié la description";
     case "parent":

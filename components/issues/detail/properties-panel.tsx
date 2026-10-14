@@ -5,8 +5,10 @@ import type { IssueDTO } from "@/lib/issues/types";
 import type { IssuePatch } from "@/lib/issues/view";
 import {
   AssigneesPicker,
+  CyclePicker,
   DatePicker,
   LabelsPicker,
+  ModulePicker,
   PriorityPicker,
   StatePicker,
 } from "../properties";
@@ -72,6 +74,20 @@ export function PropertiesPanel({
           value={issue.dueDate}
           onChange={(dueDate) => onChange({ dueDate })}
           highlightOverdue
+        />
+      </Row>
+      <Row label="Cycle">
+        <CyclePicker
+          variant="full"
+          value={issue.cycleId}
+          onChange={(cycleId) => onChange({ cycleId })}
+        />
+      </Row>
+      <Row label="Module">
+        <ModulePicker
+          variant="full"
+          value={issue.moduleId}
+          onChange={(moduleId) => onChange({ moduleId })}
         />
       </Row>
     </div>

@@ -40,6 +40,8 @@ export const createIssueSchema = z
     startDate: dateOnly.optional(),
     dueDate: dateOnly.optional(),
     parentId: z.string().nullable().optional(),
+    cycleId: z.string().nullable().optional(),
+    moduleId: z.string().nullable().optional(),
   })
   .refine(datesInOrder, DATE_ORDER_ERROR);
 
@@ -55,6 +57,8 @@ export const issuePatchSchema = z
     sortOrder: z.number().finite(),
     descriptionJson: richDocSchema.nullable(),
     parentId: z.string().nullable(),
+    cycleId: z.string().nullable(),
+    moduleId: z.string().nullable(),
   })
   .partial();
 

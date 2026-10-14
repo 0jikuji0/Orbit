@@ -1,6 +1,6 @@
 "use client";
 
-import { ListFilter, SlidersHorizontal, UserRound, X } from "lucide-react";
+import { ListFilter, SlidersHorizontal, UserRound, X, Boxes, RefreshCcw } from "lucide-react";
 import type { ReactNode } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -60,6 +60,20 @@ function useFilterOptions(): Record<keyof IssueFilters, { title: string; options
           icon: <Avatar name={m.name} src={m.avatarUrl} size="xs" />,
         })),
         { value: NONE, label: "Non assigné", icon: <UserRound /> },
+      ],
+    },
+    cycle: {
+      title: "Cycle",
+      options: [
+        ...meta.cycles.map((c) => ({ value: c.id, label: c.name, icon: <RefreshCcw /> })),
+        { value: NONE, label: "Sans cycle", icon: <X /> },
+      ],
+    },
+    module: {
+      title: "Module",
+      options: [
+        ...meta.modules.map((m) => ({ value: m.id, label: m.name, icon: <Boxes /> })),
+        { value: NONE, label: "Sans module", icon: <X /> },
       ],
     },
     label: {

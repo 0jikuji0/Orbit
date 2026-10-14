@@ -1,6 +1,7 @@
 "use server";
 
 import { Prisma, type Priority } from "@prisma/client";
+import { revalidatePath } from "next/cache";
 import { runAction, UserError } from "@/lib/action";
 import { db } from "@/lib/db";
 import { wouldCreateCycle } from "@/lib/issues/hierarchy";
@@ -18,23 +19,37 @@ import { issueDTOInclude, loadIssueDTOs, toIssueDTO } from "@/server/issues/dto"
 // ─── Vérifications d'appartenance au projet (anti-IDOR) ─────────────────
 
 async function projectRefs(projectId: string) {
-  const [states, labels, members] = await Promise.all([
+  const [states, labels, members, cycles, modules] = await Promise.all([
     db.state.findMany({ where: { projectId }, orderBy: { position: "asc" } }),
     db.label.findMany({ where: { projectId } }),
     db.projectMember.findMany({
       where: { projectId },
       include: { user: { select: { id: true, name: true } } },
     }),
+    db.cycle.findMany({ where: { projectId }, select: { id: true, name: true } }),
+    db.module.findMany({ where: { projectId }, select: { id: true, name: true } }),
   ]);
-  return { states, labels, members: members.map((m) => m.user) };
+  return { states, labels, members: members.map((m) => m.user), cycles, modules };
 }
 
 type Refs = Awaited<ReturnType<typeof projectRefs>>;
 
 function assertRefs(
   refs: Refs,
-  data: { stateId?: string; labelIds?: string[]; assigneeIds?: string[] },
+  data: {
+    stateId?: string;
+    labelIds?: string[];
+    assigneeIds?: string[];
+    cycleId?: string | null;
+    moduleId?: string | null;
+  },
 ) {
+  if (data.cycleId && !refs.cycles.some((c) => c.id === data.cycleId)) {
+    throw new UserError("Cycle inconnu dans ce projet");
+  }
+  if (data.moduleId && !refs.modules.some((m) => m.id === data.moduleId)) {
+    throw new UserError("Module inconnu dans ce projet");
+  }
   if (data.stateId && !refs.states.some((s) => s.id === data.stateId)) {
     throw new UserError("État inconnu dans ce projet");
   }
@@ -80,6 +95,11 @@ const namesText = (ids: string[], items: { id: string; name: string }[]) =>
 const sameSet = (a: string[], b: string[]) =>
   a.length === b.length && a.every((id) => b.includes(id));
 
+/** Les pages serveur du projet (cycles, modules, page complète…) affichent des compteurs à jour. */
+function revalidateProject(workspaceSlug: string, projectId: string) {
+  revalidatePath(`/${workspaceSlug}/projects/${projectId}`, "layout");
+}
+
 // ─── Actions ─────────────────────────────────────────────────────────────
 
 export async function fetchIssues(input: unknown) {
@@ -120,6 +140,8 @@ export async function createIssue(input: unknown) {
           startDate: data.startDate ?? null,
           dueDate: data.dueDate ?? null,
           parentId: data.parentId ?? null,
+          cycleId: data.cycleId ?? null,
+          moduleId: data.moduleId ?? null,
           sortOrder: sortOrderBetween(last?.sortOrder, null),
           createdById: user.id,
           assignees: { create: data.assigneeIds.map((userId) => ({ userId })) },
@@ -129,6 +151,7 @@ export async function createIssue(input: unknown) {
         include: issueDTOInclude,
       });
     });
+    revalidateProject(workspaceSlug, projectId);
     return toIssueDTO(issue);
   });
 }
@@ -202,6 +225,16 @@ export async function updateIssue(input: unknown) {
         newParent ? key(newParent.sequenceId) : null,
       );
     }
+    const nameOf = (items: { id: string; name: string }[], id: string | null) =>
+      (id && items.find((i) => i.id === id)?.name) || null;
+    if (patch.cycleId !== undefined && patch.cycleId !== current.cycleId) {
+      data.cycleId = patch.cycleId;
+      log("cycle", nameOf(refs.cycles, current.cycleId), nameOf(refs.cycles, patch.cycleId));
+    }
+    if (patch.moduleId !== undefined && patch.moduleId !== current.moduleId) {
+      data.moduleId = patch.moduleId;
+      log("module", nameOf(refs.modules, current.moduleId), nameOf(refs.modules, patch.moduleId));
+    }
     // La position n'est pas un champ métier : pas d'entrée d'historique.
     if (patch.sortOrder !== undefined) data.sortOrder = patch.sortOrder;
 
@@ -261,6 +294,7 @@ export async function updateIssue(input: unknown) {
         include: issueDTOInclude,
       });
     });
+    revalidateProject(workspaceSlug, projectId);
     return toIssueDTO(updated);
   });
 }
@@ -276,5 +310,6 @@ export async function archiveIssue(input: unknown) {
     });
     if (!count) throw new UserError("Tâche introuvable");
     await db.activity.create({ data: { issueId, actorId: user.id, field: "archived" } });
+    revalidateProject(workspaceSlug, projectId);
   });
 }
