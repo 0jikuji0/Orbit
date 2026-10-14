@@ -1,6 +1,7 @@
 "use server";
 
 import { Prisma, type Priority } from "@prisma/client";
+import { revalidatePath } from "next/cache";
 import { runAction, UserError } from "@/lib/action";
 import { db } from "@/lib/db";
 import { wouldCreateCycle } from "@/lib/issues/hierarchy";
@@ -94,6 +95,11 @@ const namesText = (ids: string[], items: { id: string; name: string }[]) =>
 const sameSet = (a: string[], b: string[]) =>
   a.length === b.length && a.every((id) => b.includes(id));
 
+/** Les pages serveur du projet (cycles, modules, page complète…) affichent des compteurs à jour. */
+function revalidateProject(workspaceSlug: string, projectId: string) {
+  revalidatePath(`/${workspaceSlug}/projects/${projectId}`, "layout");
+}
+
 // ─── Actions ─────────────────────────────────────────────────────────────
 
 export async function fetchIssues(input: unknown) {
@@ -145,6 +151,7 @@ export async function createIssue(input: unknown) {
         include: issueDTOInclude,
       });
     });
+    revalidateProject(workspaceSlug, projectId);
     return toIssueDTO(issue);
   });
 }
@@ -287,6 +294,7 @@ export async function updateIssue(input: unknown) {
         include: issueDTOInclude,
       });
     });
+    revalidateProject(workspaceSlug, projectId);
     return toIssueDTO(updated);
   });
 }
@@ -302,5 +310,6 @@ export async function archiveIssue(input: unknown) {
     });
     if (!count) throw new UserError("Tâche introuvable");
     await db.activity.create({ data: { issueId, actorId: user.id, field: "archived" } });
+    revalidateProject(workspaceSlug, projectId);
   });
 }
