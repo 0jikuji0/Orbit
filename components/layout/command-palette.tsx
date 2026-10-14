@@ -192,6 +192,7 @@ export function CommandPalette({
                   {hits.map((h) => (
                     <Command.Item
                       key={h.id}
+                      forceMount
                       value={`${h.key} ${h.title}`}
                       onSelect={() =>
                         go(`${workspaceBase}/projects/${h.projectId}/issues/${h.sequenceId}`)
@@ -203,6 +204,24 @@ export function CommandPalette({
                       <span className="truncate">{h.title}</span>
                     </Command.Item>
                   ))}
+                </Command.Group>
+              )}
+
+              {query.trim() && (
+                <Command.Group heading="Recherche" className={groupClass}>
+                  <Command.Item
+                    forceMount
+                    value={`rechercher ${query}`}
+                    onSelect={() =>
+                      go(`${workspaceBase}/search?q=${encodeURIComponent(query.trim())}`)
+                    }
+                    className={itemClass}
+                  >
+                    <Search />
+                    <span className="truncate">
+                      Rechercher « {query.trim()} » dans tout l&apos;espace
+                    </span>
+                  </Command.Item>
                 </Command.Group>
               )}
 
