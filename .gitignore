@@ -28,3 +28,6 @@ blob-report/
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# sauvegardes locales
+/backups/
