@@ -38,12 +38,14 @@ function CreateIssueForm({ defaults, onDone }: { defaults: NewIssueDefaults; onD
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        // Capture : on intercepte avant le bouton focalisé (qui ouvrirait son menu).
         e.preventDefault();
+        e.stopPropagation();
         formRef.current?.requestSubmit();
       }
     }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
   }, []);
 
   function onSubmit(event: FormEvent) {
