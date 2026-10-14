@@ -116,8 +116,9 @@ export type IssuePatch = Partial<
     | "startDate"
     | "dueDate"
     | "sortOrder"
+    | "parentId"
   >
->;
+> & { descriptionJson?: RichNode | null };
 
 /** Modification à appliquer quand une tâche passe du groupe `from` au groupe `to`. */
 export function groupMovePatch(
