@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { Tooltip } from "@/components/ui/tooltip";
-import type { RichNode } from "@/lib/rich-text";
+import { toPlainDoc, type RichNode } from "@/lib/rich-text";
 import { cn } from "@/lib/utils";
 import type { MentionItem } from "./mention-list";
 import { mentionSuggestion } from "./mention-suggestion";
@@ -191,7 +191,11 @@ export function RichEditor({
         return false;
       },
     },
-    onUpdate: ({ editor: e }) => onChangeRef.current?.(e.getJSON() as RichNode),
+    onUpdate: ({ editor: e }) => {
+      // Une mise à jour peut survenir pendant la destruction : ne pas l'enregistrer.
+      if (e.isDestroyed) return;
+      onChangeRef.current?.(toPlainDoc(e.getJSON()));
+    },
   });
 
   useEffect(() => {

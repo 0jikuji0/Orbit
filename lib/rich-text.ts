@@ -50,3 +50,11 @@ export function mentionedUserIds(node: RichNode | null | undefined): string[] {
   const own = node.type === "mention" && typeof node.attrs?.id === "string" ? [node.attrs.id] : [];
   return [...new Set([...own, ...(node.content ?? []).flatMap(mentionedUserIds)])];
 }
+
+/**
+ * Copie en objets JSON « purs ». Les objets produits par ProseMirror ne sont pas tous des objets
+ * littéraux et seraient mal sérialisés par les server actions (attributs perdus).
+ */
+export function toPlainDoc(doc: unknown): RichNode {
+  return JSON.parse(JSON.stringify(doc)) as RichNode;
+}
