@@ -20,7 +20,7 @@ export async function getProjectSettings(workspaceSlug: string, projectId: strin
     workspaceSlug,
     projectId,
   );
-  const [members, workspaceMembers] = await Promise.all([
+  const [members, workspaceMembers, states, labels] = await Promise.all([
     db.projectMember.findMany({
       where: { projectId: project.id },
       include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
@@ -30,6 +30,16 @@ export async function getProjectSettings(workspaceSlug: string, projectId: strin
       where: { workspaceId: workspace.id },
       include: { user: { select: { id: true, name: true, email: true } } },
       orderBy: { user: { name: "asc" } },
+    }),
+    db.state.findMany({
+      where: { projectId: project.id },
+      orderBy: { position: "asc" },
+      include: { _count: { select: { issues: true } } },
+    }),
+    db.label.findMany({
+      where: { projectId: project.id },
+      orderBy: { name: "asc" },
+      include: { _count: { select: { issues: true } } },
     }),
   ]);
   const memberIds = new Set(members.map((m) => m.userId));
@@ -45,5 +55,7 @@ export async function getProjectSettings(workspaceSlug: string, projectId: strin
     canEdit: role === "ADMIN",
     members: members.map((m) => ({ ...m.user, role: m.role })),
     candidates,
+    states: states.map(({ _count, ...s }) => ({ ...s, issueCount: _count.issues })),
+    labels: labels.map(({ _count, ...l }) => ({ ...l, issueCount: _count.issues })),
   };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
 import { DropdownMenu as DropdownPrimitive } from "radix-ui";
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
@@ -71,5 +71,54 @@ export function DropdownSeparator({
       className={cn("bg-border -mx-1 my-1 h-px", className)}
       {...props}
     />
+  );
+}
+
+export const DropdownSub = DropdownPrimitive.Sub;
+export const DropdownRadioGroup = DropdownPrimitive.RadioGroup;
+
+export function DropdownSubTrigger({
+  className,
+  children,
+  ...props
+}: ComponentProps<typeof DropdownPrimitive.SubTrigger>) {
+  return (
+    <DropdownPrimitive.SubTrigger
+      className={cn(menuItemClassName, "data-[state=open]:bg-surface-2", className)}
+      {...props}
+    >
+      {children}
+      <ChevronRight className="ml-auto" />
+    </DropdownPrimitive.SubTrigger>
+  );
+}
+
+export function DropdownSubContent({
+  className,
+  ...props
+}: ComponentProps<typeof DropdownPrimitive.SubContent>) {
+  return (
+    <DropdownPrimitive.Portal>
+      <DropdownPrimitive.SubContent
+        sideOffset={4}
+        className={cn(floatingClassName, className)}
+        {...props}
+      />
+    </DropdownPrimitive.Portal>
+  );
+}
+
+export function DropdownRadioItem({
+  className,
+  children,
+  ...props
+}: ComponentProps<typeof DropdownPrimitive.RadioItem>) {
+  return (
+    <DropdownPrimitive.RadioItem className={cn(menuItemClassName, "pr-7", className)} {...props}>
+      {children}
+      <DropdownPrimitive.ItemIndicator className="absolute right-2">
+        <Check />
+      </DropdownPrimitive.ItemIndicator>
+    </DropdownPrimitive.RadioItem>
   );
 }

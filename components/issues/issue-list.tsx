@@ -2,94 +2,121 @@
 
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
-import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import type { ProjectIssues } from "@/server/queries/issues";
-import { PriorityIcon } from "./priority-icon";
-import { StateDot } from "./state-dot";
+import type { IssueDTO } from "@/lib/issues/types";
+import { defaultsForGroup, type GroupBy, type IssueGroup } from "@/lib/issues/view";
+import { cn } from "@/lib/utils";
+import { AddInGroupButton, GroupTitle } from "./group-header";
+import { IssueActions } from "./issue-actions";
+import { IssueTitle } from "./issue-title";
+import { useIssuesContext } from "./issues-context";
+import {
+  AssigneesPicker,
+  DatePicker,
+  LabelsPicker,
+  PriorityPicker,
+  StatePicker,
+} from "./properties";
+import { useUpdateIssue } from "./use-issues";
 
-type Issue = ProjectIssues["issues"][number];
-
-type IssueListProps = {
-  identifier: string;
-  states: ProjectIssues["states"];
-  issues: Issue[];
-};
-
-const dateFormat = new Intl.DateTimeFormat("fr-FR", {
-  day: "numeric",
-  month: "short",
-  timeZone: "UTC",
-});
-
-function IssueRow({ issue, identifier }: { issue: Issue; identifier: string }) {
+export function IssueKey({ issue }: { issue: IssueDTO }) {
+  const { meta } = useIssuesContext();
   return (
-    <div className="border-border hover:bg-surface-2 flex h-9 items-center gap-3 border-b px-4">
-      <PriorityIcon priority={issue.priority} />
-      <span className="text-text-dim w-16 shrink-0 font-mono text-xs">
-        {identifier}-{issue.sequenceId}
+    <span className="text-text-dim shrink-0 font-mono text-xs">
+      {meta.identifier}-{issue.sequenceId || "…"}
+    </span>
+  );
+}
+
+function IssueRow({ issue }: { issue: IssueDTO }) {
+  const update = useUpdateIssue();
+  const [renaming, setRenaming] = useState(false);
+  const set = (patch: Parameters<typeof update.mutate>[0]["patch"]) =>
+    update.mutate({ issueId: issue.id, patch });
+  const pending = issue.id.startsWith("temp-");
+
+  return (
+    <div
+      data-testid="issue-row"
+      className={cn(
+        "group border-border hover:bg-surface-2 flex h-9 items-center gap-2 border-b px-4",
+        pending && "opacity-60",
+      )}
+    >
+      <PriorityPicker value={issue.priority} onChange={(priority) => set({ priority })} />
+      <span className="w-16 shrink-0">
+        <IssueKey issue={issue} />
       </span>
-      <span className="min-w-0 flex-1 truncate">{issue.title}</span>
-      <div className="flex shrink-0 items-center gap-2">
-        {issue.labels.map(({ label }) => (
-          <Badge key={label.id} color={label.color}>
-            {label.name}
-          </Badge>
-        ))}
-        {issue.dueDate && (
-          <span className="text-text-dim font-mono text-xs">
-            {dateFormat.format(issue.dueDate)}
-          </span>
-        )}
-        <div className="flex -space-x-1">
-          {issue.assignees.map(({ user }) => (
-            <Avatar key={user.id} name={user.name} src={user.avatarUrl} size="sm" />
-          ))}
-        </div>
+      <StatePicker value={issue.stateId} onChange={(stateId) => set({ stateId })} />
+      <IssueTitle
+        title={issue.title}
+        editing={renaming}
+        onSubmit={(title) => {
+          setRenaming(false);
+          set({ title });
+        }}
+        onCancel={() => setRenaming(false)}
+        className="flex-1"
+      />
+      <div className="ml-auto flex shrink-0 items-center gap-1">
+        <LabelsPicker value={issue.labelIds} onChange={(labelIds) => set({ labelIds })} />
+        <DatePicker
+          label="Échéance"
+          value={issue.dueDate}
+          onChange={(dueDate) => set({ dueDate })}
+          highlightOverdue
+        />
+        <AssigneesPicker
+          value={issue.assigneeIds}
+          onChange={(assigneeIds) => set({ assigneeIds })}
+        />
+        {!pending && <IssueActions issueId={issue.id} onRename={() => setRenaming(true)} />}
       </div>
     </div>
   );
 }
 
-export function IssueList({ identifier, states, issues }: IssueListProps) {
+export function IssueList({ groups, groupBy }: { groups: IssueGroup[]; groupBy: GroupBy }) {
+  const { canEdit, openCreate } = useIssuesContext();
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
-  const toggle = (id: string) =>
+  const toggle = (key: string) =>
     setCollapsed((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
 
   return (
     <div className="flex-1 overflow-y-auto">
-      {states.map((state) => {
-        const group = issues.filter((i) => i.stateId === state.id);
-        const isOpen = !collapsed.has(state.id);
+      {groups.map((group) => {
+        const isOpen = !collapsed.has(group.key);
         return (
-          <section key={state.id}>
+          <section key={group.key} aria-label={group.label}>
             <header className="border-border bg-surface sticky top-0 z-10 flex h-9 items-center gap-2 border-b px-4">
               <button
                 type="button"
-                onClick={() => toggle(state.id)}
+                onClick={() => toggle(group.key)}
                 aria-expanded={isOpen}
-                className="flex cursor-pointer items-center gap-2 text-sm font-medium"
+                className="flex min-w-0 cursor-pointer items-center gap-2"
               >
                 {isOpen ? (
-                  <ChevronDown className="text-text-dim size-3.5" />
+                  <ChevronDown className="text-text-dim size-3.5 shrink-0" />
                 ) : (
-                  <ChevronRight className="text-text-dim size-3.5" />
+                  <ChevronRight className="text-text-dim size-3.5 shrink-0" />
                 )}
-                <StateDot color={state.color} />
-                {state.name}
-                <span className="text-text-dim font-mono text-xs">{group.length}</span>
+                <GroupTitle group={group} />
               </button>
+              {canEdit && (
+                <span className="ml-auto">
+                  <AddInGroupButton
+                    label={`Nouvelle tâche dans ${group.label}`}
+                    onClick={() => openCreate(defaultsForGroup(groupBy, group.key))}
+                  />
+                </span>
+              )}
             </header>
-            {isOpen &&
-              group.map((issue) => (
-                <IssueRow key={issue.id} issue={issue} identifier={identifier} />
-              ))}
+            {isOpen && group.issues.map((issue) => <IssueRow key={issue.id} issue={issue} />)}
           </section>
         );
       })}

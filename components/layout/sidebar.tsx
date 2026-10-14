@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ComponentType } from "react";
+import { useState, useTransition, type ComponentType } from "react";
 import { ProjectIcon } from "@/components/projects/project-icon";
 import { Avatar } from "@/components/ui/avatar";
 import {
@@ -70,12 +70,14 @@ function NavLink({
 function ProjectNav({ base, project }: { base: string; project: SidebarProject }) {
   const pathname = usePathname();
   const href = `${base}/projects/${project.id}`;
-  const [open, setOpen] = useState(() => pathname.startsWith(href));
+  // Déplié automatiquement quand on est dans le projet, sauf si l'utilisateur a choisi.
+  const [userOpen, setUserOpen] = useState<boolean | null>(null);
+  const open = userOpen ?? pathname.startsWith(href);
   return (
     <div>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setUserOpen(!open)}
         aria-expanded={open}
         className="text-text hover:bg-surface-2 flex h-7 w-full cursor-pointer items-center gap-1.5 px-2 text-sm"
       >
@@ -112,6 +114,7 @@ function ProjectNav({ base, project }: { base: string; project: SidebarProject }
 
 export function Sidebar({ workspace, workspaces, projects, user }: SidebarProps) {
   const base = `/${workspace.slug}`;
+  const [, startTransition] = useTransition();
   return (
     <aside className="border-border bg-surface flex w-60 shrink-0 flex-col border-r">
       <div className="border-border flex h-12 shrink-0 items-center border-b px-2">
@@ -192,14 +195,10 @@ export function Sidebar({ workspace, workspaces, projects, user }: SidebarProps)
           <DropdownContent side="top" className="w-56">
             <DropdownLabel className="truncate">{user.email}</DropdownLabel>
             <DropdownSeparator />
-            <form action={signOut}>
-              <DropdownItem asChild>
-                <button type="submit" className="w-full">
-                  <LogOut />
-                  Se déconnecter
-                </button>
-              </DropdownItem>
-            </form>
+            <DropdownItem onSelect={() => startTransition(() => signOut())}>
+              <LogOut />
+              Se déconnecter
+            </DropdownItem>
           </DropdownContent>
         </Dropdown>
       </div>
