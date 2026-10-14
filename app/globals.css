@@ -121,3 +121,109 @@
     background: transparent;
   }
 }
+
+/* ─── Texte riche (Tiptap) ──────────────────────────────────────────── */
+@layer components {
+  .rich-text {
+    font-size: 13px;
+    line-height: 20px;
+    color: var(--text);
+    word-break: break-word;
+  }
+  .rich-text > * + * {
+    margin-top: 8px;
+  }
+  .rich-text h1 {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 600;
+  }
+  .rich-text h2 {
+    font-size: 15px;
+    line-height: 22px;
+    font-weight: 600;
+  }
+  .rich-text h3 {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+  }
+  .rich-text ul {
+    list-style: disc;
+    padding-left: 20px;
+  }
+  .rich-text ol {
+    list-style: decimal;
+    padding-left: 20px;
+  }
+  .rich-text ul[data-type="taskList"] {
+    list-style: none;
+    padding-left: 0;
+  }
+  .rich-text ul[data-type="taskList"] li {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .rich-text ul[data-type="taskList"] li > label {
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .rich-text ul[data-type="taskList"] li > div {
+    flex: 1;
+  }
+  .rich-text ul[data-type="taskList"] li[data-checked="true"] > div {
+    color: var(--text-dim);
+    text-decoration: line-through;
+  }
+  .rich-text input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 14px;
+    height: 14px;
+    border-radius: 0;
+  }
+  .rich-text code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    padding: 0 4px;
+  }
+  .rich-text pre {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    overflow-x: auto;
+  }
+  .rich-text pre code {
+    background: none;
+    border: 0;
+    padding: 0;
+  }
+  .rich-text blockquote {
+    border-left: 2px solid var(--border-strong);
+    padding-left: 12px;
+    color: var(--text-muted);
+  }
+  .rich-text a {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+  .rich-text hr {
+    border-color: var(--border);
+  }
+  .rich-text .mention {
+    color: var(--accent);
+    background: var(--surface-3);
+    padding: 0 2px;
+  }
+  .rich-text p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: var(--text-dim);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+}

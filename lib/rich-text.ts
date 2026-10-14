@@ -6,7 +6,7 @@ export type RichNode = {
   text?: string;
   attrs?: Record<string, unknown>;
   content?: RichNode[];
-  marks?: unknown[];
+  marks?: { type: string; attrs?: Record<string, unknown> }[];
 };
 
 const MAX_DOC_BYTES = 200_000;
@@ -17,7 +17,11 @@ const nodeSchema: z.ZodType<RichNode> = z.lazy(() =>
     text: z.string().optional(),
     attrs: z.record(z.string(), z.unknown()).optional(),
     content: z.array(nodeSchema).optional(),
-    marks: z.array(z.unknown()).optional(),
+    marks: z
+      .array(
+        z.looseObject({ type: z.string(), attrs: z.record(z.string(), z.unknown()).optional() }),
+      )
+      .optional(),
   }),
 );
 
