@@ -17,6 +17,9 @@ Next.js 15 · TypeScript · Tailwind CSS v4 · PostgreSQL 16 · Prisma · better
 
 Prérequis : Node.js ≥ 22, pnpm, Docker.
 
+> ⚠️ Sur macOS, ne placez pas le dépôt dans un dossier synchronisé par iCloud Drive
+> (`~/Documents`, `~/Desktop`) : iCloud peut décharger des fichiers et bloquer git ou le build.
+
 ```bash
 pnpm install
 cp .env.example .env
@@ -42,7 +45,7 @@ Comptes de démo créés par le seed : `alice@orbit.local` / `bob@orbit.local`, 
 
 - [x] Phase 0 — Fondations (design system, layout)
 - [x] Phase 1 — Comptes & structure
-- [ ] Phase 2 — Tâches (liste, kanban)
+- [x] Phase 2 — Tâches (liste, kanban)
 - [ ] Phase 3 — Détail d'une tâche
 - [ ] Phase 4 — Organisation (cycles, modules, vues)
 - [ ] Phase 5 — Suivi (inbox, recherche, analytics)
