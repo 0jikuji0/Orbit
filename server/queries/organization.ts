@@ -59,3 +59,23 @@ export async function listModules(workspaceSlug: string, projectId: string) {
     modules: modules.map(({ issues, ...m }) => ({ ...m, progress: progress(issues, groups) })),
   };
 }
+
+export async function listSavedViews(workspaceSlug: string, projectId: string) {
+  const { user, project, role } = await requireProject(workspaceSlug, projectId);
+  const views = await db.savedView.findMany({
+    where: { projectId: project.id },
+    orderBy: { name: "asc" },
+    include: { createdBy: { select: { id: true, name: true } } },
+  });
+  return {
+    project,
+    views: views.map((v) => ({
+      id: v.id,
+      name: v.name,
+      layout: v.layout,
+      filtersJson: v.filtersJson,
+      createdBy: v.createdBy.name,
+      canDelete: v.createdById === user.id || role === "ADMIN",
+    })),
+  };
+}

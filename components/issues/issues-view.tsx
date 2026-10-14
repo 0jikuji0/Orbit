@@ -15,6 +15,7 @@ import { IssueCalendar } from "./issue-calendar";
 import { IssueKanban } from "./issue-kanban";
 import { IssueList } from "./issue-list";
 import { IssueTable } from "./issue-table";
+import { SaveViewDialog } from "./save-view-dialog";
 import { ActiveFilters, DisplayMenu, FiltersMenu } from "./issues-filters";
 import { IssuesProvider, useIssuesContext, type NewIssueDefaults } from "./issues-context";
 import { useIssues } from "./use-issues";
@@ -172,6 +173,7 @@ function IssuesBody({
             </div>
             <FiltersMenu filters={view.filters} onChange={(filters) => setView({ filters })} />
             <DisplayMenu groupBy={view.groupBy} onChange={(groupBy) => setView({ groupBy })} />
+            {canEdit && <SaveViewDialog view={view} />}
             {canEdit && (
               <Button size="sm" variant="primary" onClick={() => openCreate()}>
                 <Plus />
