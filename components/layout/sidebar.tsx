@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BarChart3,
   ChevronDown,
   ChevronRight,
   CircleDot,
@@ -107,6 +108,9 @@ function ProjectNav({ base, project }: { base: string; project: SidebarProject }
           </NavLink>
           <NavLink href={`${href}/views`} icon={Layers} indent>
             Vues
+          </NavLink>
+          <NavLink href={`${href}/analytics`} icon={BarChart3} indent>
+            Statistiques
           </NavLink>
           <NavLink href={`${href}/settings`} icon={Settings} indent>
             Réglages

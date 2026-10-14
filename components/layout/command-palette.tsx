@@ -2,6 +2,7 @@
 
 import { Command } from "cmdk";
 import {
+  BarChart3,
   Boxes,
   CircleDot,
   FolderKanban,
@@ -263,6 +264,9 @@ export function CommandPalette({
                     hint={["G", "V"]}
                   >
                     Vues
+                  </Item>
+                  <Item onSelect={() => go(`${projectBase}/analytics`)} icon={<BarChart3 />}>
+                    Statistiques
                   </Item>
                   <Item onSelect={() => go(`${projectBase}/settings`)} icon={<Settings />}>
                     Réglages du projet

@@ -1,9 +1,11 @@
 import "server-only";
 import type { StateGroup } from "@prisma/client";
 import { db } from "@/lib/db";
+import { computeAnalytics } from "@/lib/issues/analytics";
 import { progress } from "@/lib/issues/cycles";
 import { requireProject } from "@/lib/permissions";
 import { hasProjectRole } from "@/lib/roles";
+import { loadIssueDTOs, loadProjectMeta } from "@/server/issues/dto";
 
 async function stateGroups(projectId: string) {
   const states = await db.state.findMany({
@@ -78,4 +80,10 @@ export async function listSavedViews(workspaceSlug: string, projectId: string) {
       canDelete: v.createdById === user.id || role === "ADMIN",
     })),
   };
+}
+
+export async function getProjectAnalytics(workspaceSlug: string, projectId: string) {
+  const { project } = await requireProject(workspaceSlug, projectId);
+  const [meta, issues] = await Promise.all([loadProjectMeta(project), loadIssueDTOs(project.id)]);
+  return { project, analytics: computeAnalytics(issues, meta.states, meta.members, new Date()) };
 }
