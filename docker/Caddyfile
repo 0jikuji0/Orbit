@@ -1,0 +1,19 @@
+# Reverse proxy HTTPS : Caddy obtient et renouvelle automatiquement le certificat Let's Encrypt
+# pour ORBIT_DOMAIN (le DNS du domaine doit pointer vers ce serveur, ports 80 et 443 ouverts).
+{
+	email {$ACME_EMAIL}
+}
+
+{$ORBIT_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "DENY"
+		-Server
+	}
+
+	reverse_proxy app:3000
+}
