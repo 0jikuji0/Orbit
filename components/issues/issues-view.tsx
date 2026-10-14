@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { Tooltip } from "@/components/ui/tooltip";
 import type { IssueDTO, ProjectMeta } from "@/lib/issues/types";
-import { filterIssues, groupIssues, type Layout } from "@/lib/issues/view";
+import { filterIssues, groupIssues, type Layout, type ViewState } from "@/lib/issues/view";
 import { cn } from "@/lib/utils";
 import { CreateIssueDialog } from "./create-issue-dialog";
+import { IssueDetail } from "./detail/issue-detail";
 import { IssueKanban } from "./issue-kanban";
 import { IssueList } from "./issue-list";
 import { ActiveFilters, DisplayMenu, FiltersMenu } from "./issues-filters";
@@ -35,6 +36,7 @@ type IssuesViewProps = {
   workspaceSlug: string;
   meta: ProjectMeta;
   canEdit: boolean;
+  currentUserId: string;
   initialIssues: IssueDTO[];
   breadcrumb: ReactNode;
 };
@@ -43,22 +45,30 @@ export function IssuesView({
   workspaceSlug,
   meta,
   canEdit,
+  currentUserId,
   initialIssues,
   breadcrumb,
 }: IssuesViewProps) {
+  const [view, setView] = useView();
   const [createDefaults, setCreateDefaults] = useState<NewIssueDefaults | null>(null);
   const openCreate = useCallback(
     (defaults: NewIssueDefaults = {}) => canEdit && setCreateDefaults(defaults),
     [canEdit],
   );
+  const openIssue = useCallback((peek: string) => setView({ peek }), [setView]);
   const context = useMemo(
-    () => ({ workspaceSlug, meta, canEdit, openCreate }),
-    [workspaceSlug, meta, canEdit, openCreate],
+    () => ({ workspaceSlug, meta, canEdit, currentUserId, openCreate, openIssue }),
+    [workspaceSlug, meta, canEdit, currentUserId, openCreate, openIssue],
   );
 
   return (
     <IssuesProvider value={context}>
-      <IssuesBody initialIssues={initialIssues} breadcrumb={breadcrumb} />
+      <IssuesBody
+        initialIssues={initialIssues}
+        breadcrumb={breadcrumb}
+        view={view}
+        setView={setView}
+      />
       <CreateIssueDialog defaults={createDefaults} onClose={() => setCreateDefaults(null)} />
     </IssuesProvider>
   );
@@ -67,12 +77,15 @@ export function IssuesView({
 function IssuesBody({
   initialIssues,
   breadcrumb,
+  view,
+  setView,
 }: {
   initialIssues: IssueDTO[];
   breadcrumb: ReactNode;
+  view: ViewState;
+  setView: (next: Partial<ViewState>) => void;
 }) {
   const { data: issues } = useIssues(initialIssues);
-  const [view, setView] = useView();
   const { meta, canEdit, openCreate } = useIssuesContext();
 
   // Raccourci « C » : nouvelle tâche
@@ -87,6 +100,18 @@ function IssuesBody({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [openCreate]);
+
+  // Échap : fermer le panneau latéral (si aucun menu ni modale n'est ouvert).
+  useEffect(() => {
+    if (!view.peek) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Escape" || isTyping(e.target)) return;
+      if (document.querySelector("[role=dialog],[role=menu],[role=listbox]")) return;
+      setView({ peek: null });
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [view.peek, setView]);
 
   const groups = useMemo(
     () => groupIssues(filterIssues(issues, view.filters), view.groupBy, meta),
@@ -138,11 +163,29 @@ function IssuesBody({
         }
       />
       <ActiveFilters filters={view.filters} onChange={(filters) => setView({ filters })} />
-      {layout === "kanban" ? (
-        <IssueKanban groups={groups} groupBy={view.groupBy} />
-      ) : (
-        <IssueList groups={groups} groupBy={view.groupBy} />
-      )}
+      <div className="flex min-h-0 flex-1">
+        <div className="flex min-w-0 flex-1 flex-col">
+          {layout === "kanban" ? (
+            <IssueKanban groups={groups} groupBy={view.groupBy} />
+          ) : (
+            <IssueList groups={groups} groupBy={view.groupBy} />
+          )}
+        </div>
+        {view.peek && (
+          <aside
+            aria-label="Détail de la tâche"
+            className="border-border bg-surface flex w-[480px] shrink-0 flex-col border-l"
+          >
+            <IssueDetail
+              key={view.peek}
+              issueId={view.peek}
+              variant="peek"
+              onClose={() => setView({ peek: null })}
+              onOpenIssue={({ id }) => setView({ peek: id })}
+            />
+          </aside>
+        )}
+      </div>
     </>
   );
 }

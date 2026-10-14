@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { IssueActions } from "./issue-actions";
 import { IssueKey } from "./issue-list";
 import { IssueTitle } from "./issue-title";
+import { useIssuesContext } from "./issues-context";
 import {
   AssigneesPicker,
   DatePicker,
@@ -27,6 +28,7 @@ export function IssueCard({
   dragging?: boolean;
   overlay?: boolean;
 }) {
+  const { openIssue } = useIssuesContext();
   const update = useUpdateIssue();
   const [renaming, setRenaming] = useState(false);
   const set = (patch: Parameters<typeof update.mutate>[0]["patch"]) =>
@@ -35,8 +37,9 @@ export function IssueCard({
   return (
     <div
       data-testid="issue-card"
+      onClick={() => !overlay && !renaming && !issue.id.startsWith("temp-") && openIssue(issue.id)}
       className={cn(
-        "group border-border bg-surface-2 hover:border-border-strong flex flex-col gap-2 border p-2.5",
+        "group border-border bg-surface-2 hover:border-border-strong flex cursor-pointer flex-col gap-2 border p-2.5",
         dragging && "opacity-30",
         overlay && "border-border-strong bg-surface-3 cursor-grabbing",
         issue.id.startsWith("temp-") && "opacity-60",

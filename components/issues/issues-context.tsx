@@ -11,8 +11,11 @@ type IssuesContextValue = {
   workspaceSlug: string;
   meta: ProjectMeta;
   canEdit: boolean;
+  currentUserId: string;
   /** Ouvre la modale de création, éventuellement pré-remplie (ex. l'état d'une colonne). */
   openCreate: (defaults?: NewIssueDefaults) => void;
+  /** Ouvre une tâche dans le panneau latéral (vue liste / kanban). */
+  openIssue: (issueId: string) => void;
 };
 
 const IssuesContext = createContext<IssuesContextValue | null>(null);

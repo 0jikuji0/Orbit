@@ -25,7 +25,13 @@ export type IssueFilters = {
   label: string[];
 };
 
-export type ViewState = { layout: Layout; groupBy: GroupBy; filters: IssueFilters };
+export type ViewState = {
+  layout: Layout;
+  groupBy: GroupBy;
+  filters: IssueFilters;
+  /** Tâche ouverte dans le panneau latéral. */
+  peek: string | null;
+};
 
 export const EMPTY_FILTERS: IssueFilters = { state: [], priority: [], assignee: [], label: [] };
 
@@ -158,6 +164,7 @@ export function parseViewParams(params: URLSearchParams): ViewState {
       assignee: list(params.get("assignee")),
       label: list(params.get("label")),
     },
+    peek: params.get("peek") || null,
   };
 }
 
@@ -168,6 +175,7 @@ export function serializeViewParams(view: ViewState): URLSearchParams {
   for (const [key, values] of Object.entries(view.filters)) {
     if (values.length) params.set(key, values.join(","));
   }
+  if (view.peek) params.set("peek", view.peek);
   return params;
 }
 

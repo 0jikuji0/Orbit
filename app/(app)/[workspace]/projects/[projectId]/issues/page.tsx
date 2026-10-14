@@ -12,13 +12,14 @@ export default async function IssuesPage({
   params: Promise<{ workspace: string; projectId: string }>;
 }) {
   const { workspace, projectId } = await params;
-  const { meta, issues, canEdit } = await getIssuesPage(workspace, projectId);
+  const { meta, issues, canEdit, currentUserId } = await getIssuesPage(workspace, projectId);
 
   return (
     <IssuesView
       workspaceSlug={workspace}
       meta={meta}
       canEdit={canEdit}
+      currentUserId={currentUserId}
       initialIssues={issues}
       breadcrumb={
         <>
