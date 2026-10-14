@@ -11,7 +11,11 @@ import {
   deleteCommentSchema,
   updateCommentSchema,
 } from "@/lib/validators/comment";
+import { storage } from "@/lib/storage";
+import { z } from "zod";
 import { loadIssueDetail, loadTimeline } from "@/server/issues/detail";
+
+const deleteAttachmentSchema = issueRefSchema.extend({ attachmentId: z.string() });
 
 async function requireIssue(
   workspaceSlug: string,
@@ -89,5 +93,23 @@ export async function deleteComment(input: unknown) {
       throw new PermissionError();
     }
     await db.comment.delete({ where: { id: commentId } });
+  });
+}
+
+// ─── Pièces jointes (l'envoi passe par POST /api/uploads) ────────────────
+
+export async function deleteAttachment(input: unknown) {
+  return runAction(async () => {
+    const { workspaceSlug, projectId, issueId, attachmentId } = deleteAttachmentSchema.parse(input);
+    const { user } = await requireIssue(workspaceSlug, projectId, issueId, "MEMBER");
+    const attachment = await db.attachment.findFirst({ where: { id: attachmentId, issueId } });
+    if (!attachment) throw new UserError("Pièce jointe introuvable");
+    await db.$transaction([
+      db.attachment.delete({ where: { id: attachment.id } }),
+      db.activity.create({
+        data: { issueId, actorId: user.id, field: "attachment", oldValue: attachment.filename },
+      }),
+    ]);
+    await storage.delete(attachment.path);
   });
 }
