@@ -39,7 +39,17 @@ type IssuesViewProps = {
   currentUserId: string;
   initialIssues: IssueDTO[];
   breadcrumb: ReactNode;
+  /** Limite la vue à un cycle ou un module ; les nouvelles tâches y sont rattachées. */
+  scope?: IssueScope;
+  /** Bandeau sous la barre du haut (ex. progression d'un cycle). */
+  banner?: (issues: IssueDTO[]) => ReactNode;
 };
+
+export type IssueScope = { cycleId?: string; moduleId?: string };
+
+const inScope = (scope: IssueScope | undefined) => (issue: IssueDTO) =>
+  (!scope?.cycleId || issue.cycleId === scope.cycleId) &&
+  (!scope?.moduleId || issue.moduleId === scope.moduleId);
 
 export function IssuesView({
   workspaceSlug,
@@ -48,12 +58,14 @@ export function IssuesView({
   currentUserId,
   initialIssues,
   breadcrumb,
+  scope,
+  banner,
 }: IssuesViewProps) {
   const [view, setView] = useView();
   const [createDefaults, setCreateDefaults] = useState<NewIssueDefaults | null>(null);
   const openCreate = useCallback(
-    (defaults: NewIssueDefaults = {}) => canEdit && setCreateDefaults(defaults),
-    [canEdit],
+    (defaults: NewIssueDefaults = {}) => canEdit && setCreateDefaults({ ...scope, ...defaults }),
+    [canEdit, scope],
   );
   const openIssue = useCallback((peek: string) => setView({ peek }), [setView]);
   const context = useMemo(
@@ -68,6 +80,8 @@ export function IssuesView({
         breadcrumb={breadcrumb}
         view={view}
         setView={setView}
+        scope={scope}
+        banner={banner}
       />
       <CreateIssueDialog defaults={createDefaults} onClose={() => setCreateDefaults(null)} />
     </IssuesProvider>
@@ -79,11 +93,15 @@ function IssuesBody({
   breadcrumb,
   view,
   setView,
+  scope,
+  banner,
 }: {
   initialIssues: IssueDTO[];
   breadcrumb: ReactNode;
   view: ViewState;
   setView: (next: Partial<ViewState>) => void;
+  scope?: IssueScope;
+  banner?: (issues: IssueDTO[]) => ReactNode;
 }) {
   const { data: issues } = useIssues(initialIssues);
   const { meta, canEdit, openCreate } = useIssuesContext();
@@ -113,9 +131,10 @@ function IssuesBody({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [view.peek, setView]);
 
+  const scoped = useMemo(() => issues.filter(inScope(scope)), [issues, scope]);
   const groups = useMemo(
-    () => groupIssues(filterIssues(issues, view.filters), view.groupBy, meta),
-    [issues, view.filters, view.groupBy, meta],
+    () => groupIssues(filterIssues(scoped, view.filters), view.groupBy, meta),
+    [scoped, view.filters, view.groupBy, meta],
   );
   const layout = view.layout === "kanban" ? "kanban" : "list";
 
@@ -162,6 +181,7 @@ function IssuesBody({
           </>
         }
       />
+      {banner?.(scoped)}
       <ActiveFilters filters={view.filters} onChange={(filters) => setView({ filters })} />
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col">
