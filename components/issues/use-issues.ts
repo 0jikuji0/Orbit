@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import type { ActionResult } from "@/lib/action";
 import type { IssueDTO } from "@/lib/issues/types";
 import type { IssuePatch } from "@/lib/issues/view";
@@ -8,8 +8,10 @@ import { archiveIssue, createIssue, fetchIssues, updateIssue } from "@/server/ac
 import { useIssuesContext } from "./issues-context";
 
 export const issuesKey = (projectId: string) => ["issues", projectId] as const;
+export const issueDetailKey = (issueId: string) => ["issue", issueId] as const;
+export const timelineKey = (issueId: string) => ["timeline", issueId] as const;
 
-async function unwrap<T>(promise: Promise<ActionResult<T>>): Promise<T> {
+export async function unwrap<T>(promise: Promise<ActionResult<T>>): Promise<T> {
   const result = await promise;
   if (!result.ok) throw new Error(result.error);
   return result.data;
@@ -29,6 +31,8 @@ function useOptimisticMutation<TVars, TData>(
   mutationFn: (vars: TVars) => Promise<TData>,
   apply: (issues: IssueDTO[], vars: TVars) => IssueDTO[],
   onSuccessApply?: (issues: IssueDTO[], data: TData, vars: TVars) => IssueDTO[],
+  /** Mise à jour optimiste supplémentaire (ex. le cache du détail d'une tâche). */
+  onMutateExtra?: (queryClient: QueryClient, vars: TVars) => void,
 ) {
   const { meta } = useIssuesContext();
   const queryClient = useQueryClient();
@@ -40,6 +44,7 @@ function useOptimisticMutation<TVars, TData>(
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<IssueDTO[]>(key);
       queryClient.setQueryData<IssueDTO[]>(key, (old = []) => apply(old, vars));
+      onMutateExtra?.(queryClient, vars);
       return { previous };
     },
     onError: (_error, _vars, context) => {
@@ -50,7 +55,13 @@ function useOptimisticMutation<TVars, TData>(
         queryClient.setQueryData<IssueDTO[]>(key, (old = []) => onSuccessApply(old, data, vars));
       }
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: key }),
+        // Détails (parent, sous-tâches) et historiques ouverts.
+        queryClient.invalidateQueries({ queryKey: ["issue"] }),
+        queryClient.invalidateQueries({ queryKey: ["timeline"] }),
+      ]),
   });
 }
 
@@ -62,12 +73,23 @@ export function useUpdateIssue() {
     (issues, { issueId, patch }) =>
       issues.map((i) => (i.id === issueId ? { ...i, ...patch, updatedAt: new Date() } : i)),
     (issues, updated) => issues.map((i) => (i.id === updated.id ? updated : i)),
+    (queryClient, { issueId, patch }) =>
+      queryClient.setQueryData<IssueDTO>(issueDetailKey(issueId), (old) =>
+        old ? { ...old, ...patch } : old,
+      ),
   );
 }
 
 export type NewIssue = Pick<
   IssueDTO,
-  "title" | "stateId" | "priority" | "assigneeIds" | "labelIds" | "startDate" | "dueDate"
+  | "title"
+  | "stateId"
+  | "priority"
+  | "assigneeIds"
+  | "labelIds"
+  | "startDate"
+  | "dueDate"
+  | "parentId"
 >;
 
 export function useCreateIssue() {

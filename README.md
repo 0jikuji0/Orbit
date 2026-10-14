@@ -46,7 +46,7 @@ Comptes de démo créés par le seed : `alice@orbit.local` / `bob@orbit.local`, 
 - [x] Phase 0 — Fondations (design system, layout)
 - [x] Phase 1 — Comptes & structure
 - [x] Phase 2 — Tâches (liste, kanban)
-- [ ] Phase 3 — Détail d'une tâche
+- [x] Phase 3 — Détail d'une tâche
 - [ ] Phase 4 — Organisation (cycles, modules, vues)
 - [ ] Phase 5 — Suivi (inbox, recherche, analytics)
 - [ ] Phase 6 — Production (Docker, Caddy, sauvegardes)

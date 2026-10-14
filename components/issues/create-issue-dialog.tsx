@@ -65,6 +65,7 @@ function CreateIssueForm({ defaults, onDone }: { defaults: NewIssueDefaults; onD
         labelIds,
         startDate,
         dueDate,
+        parentId: defaults.parentId ?? null,
       },
       { onError: (e) => setError(e.message) },
     );

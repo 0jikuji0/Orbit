@@ -28,6 +28,7 @@ export function IssueKey({ issue }: { issue: IssueDTO }) {
 }
 
 function IssueRow({ issue }: { issue: IssueDTO }) {
+  const { openIssue } = useIssuesContext();
   const update = useUpdateIssue();
   const [renaming, setRenaming] = useState(false);
   const set = (patch: Parameters<typeof update.mutate>[0]["patch"]) =>
@@ -37,8 +38,9 @@ function IssueRow({ issue }: { issue: IssueDTO }) {
   return (
     <div
       data-testid="issue-row"
+      onClick={() => !pending && !renaming && openIssue(issue.id)}
       className={cn(
-        "group border-border hover:bg-surface-2 flex h-9 items-center gap-2 border-b px-4",
+        "group border-border hover:bg-surface-2 flex h-9 cursor-pointer items-center gap-2 border-b px-4",
         pending && "opacity-60",
       )}
     >

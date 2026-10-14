@@ -22,6 +22,7 @@ export function toIssueDTO(issue: IssueWithRelations): IssueDTO {
     dueDate: issue.dueDate,
     assigneeIds: issue.assignees.map((a) => a.userId),
     labelIds: issue.labels.map((l) => l.labelId),
+    parentId: issue.parentId,
     createdAt: issue.createdAt,
     updatedAt: issue.updatedAt,
   };

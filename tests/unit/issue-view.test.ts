@@ -23,6 +23,7 @@ function issue(id: string, over: Partial<IssueDTO> = {}): IssueDTO {
     dueDate: null,
     assigneeIds: [],
     labelIds: [],
+    parentId: null,
     createdAt: date,
     updatedAt: date,
     ...over,
@@ -127,6 +128,7 @@ describe("paramètres d'URL", () => {
       layout: "kanban" as const,
       groupBy: "priority" as const,
       filters: { ...EMPTY_FILTERS, priority: ["HIGH" as const], assignee: [NONE, "bob"] },
+      peek: "issue-1",
     };
     expect(parseViewParams(serializeViewParams(view))).toEqual(view);
   });
@@ -138,7 +140,12 @@ describe("paramètres d'URL", () => {
   });
   it("vue par défaut → URL vide", () => {
     expect(
-      serializeViewParams({ layout: "list", groupBy: "state", filters: EMPTY_FILTERS }).toString(),
+      serializeViewParams({
+        layout: "list",
+        groupBy: "state",
+        filters: EMPTY_FILTERS,
+        peek: null,
+      }).toString(),
     ).toBe("");
   });
 });
