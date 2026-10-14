@@ -1,7 +1,7 @@
 "use client";
 
 import type { Priority } from "@prisma/client";
-import { CalendarDays, CircleDashed, Tag, UserRound, X } from "lucide-react";
+import { Boxes, CalendarDays, CircleDashed, RefreshCcw, Tag, UserRound, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -298,5 +298,97 @@ export function DatePicker({
         )}
       </PopoverContent>
     </Popover>
+  );
+}
+
+// ─── Cycle et module ────────────────────────────────────────────────────
+
+function SinglePicker({
+  value,
+  onChange,
+  variant,
+  items,
+  icon: Icon,
+  title,
+  empty,
+}: {
+  value: string | null;
+  onChange: (id: string | null) => void;
+  variant: Variant;
+  items: { id: string; name: string }[];
+  icon: typeof Boxes;
+  title: string;
+  empty: string;
+}) {
+  const current = items.find((i) => i.id === value);
+  return (
+    <Dropdown>
+      <Trigger variant={variant} label={`${title} : ${current?.name ?? empty}`}>
+        <Icon className="size-3.5" />
+        {variant === "full" && (current?.name ?? title)}
+        {variant === "compact" && current && (
+          <span className="max-w-24 truncate">{current.name}</span>
+        )}
+      </Trigger>
+      <DropdownContent className="w-56" onClick={(e) => e.stopPropagation()}>
+        <DropdownItem onSelect={() => onChange(null)}>
+          <X />
+          {empty}
+        </DropdownItem>
+        {items.length === 0 && <DropdownLabel>Aucun élément dans ce projet</DropdownLabel>}
+        {items.map((item) => (
+          <DropdownItem key={item.id} onSelect={() => onChange(item.id)}>
+            <Icon />
+            <span className="truncate">{item.name}</span>
+          </DropdownItem>
+        ))}
+      </DropdownContent>
+    </Dropdown>
+  );
+}
+
+export function CyclePicker({
+  value,
+  onChange,
+  variant = "compact",
+}: {
+  value: string | null;
+  onChange: (cycleId: string | null) => void;
+  variant?: Variant;
+}) {
+  const { meta } = useIssuesContext();
+  return (
+    <SinglePicker
+      value={value}
+      onChange={onChange}
+      variant={variant}
+      items={meta.cycles}
+      icon={RefreshCcw}
+      title="Cycle"
+      empty="Aucun cycle"
+    />
+  );
+}
+
+export function ModulePicker({
+  value,
+  onChange,
+  variant = "compact",
+}: {
+  value: string | null;
+  onChange: (moduleId: string | null) => void;
+  variant?: Variant;
+}) {
+  const { meta } = useIssuesContext();
+  return (
+    <SinglePicker
+      value={value}
+      onChange={onChange}
+      variant={variant}
+      items={meta.modules}
+      icon={Boxes}
+      title="Module"
+      empty="Aucun module"
+    />
   );
 }

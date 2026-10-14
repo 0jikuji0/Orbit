@@ -24,6 +24,8 @@ function issue(id: string, over: Partial<IssueDTO> = {}): IssueDTO {
     assigneeIds: [],
     labelIds: [],
     parentId: null,
+    cycleId: null,
+    moduleId: null,
     createdAt: date,
     updatedAt: date,
     ...over,
@@ -43,6 +45,8 @@ const meta: ProjectMeta = {
     { id: "bob", name: "Bob", avatarUrl: null },
     { id: "alice", name: "Alice", avatarUrl: null },
   ],
+  cycles: [],
+  modules: [],
 };
 
 const issues = [
@@ -69,6 +73,14 @@ describe("filterIssues", () => {
     expect(ids({ assignee: ["bob"] })).toEqual(["i2"]);
     expect(ids({ assignee: [NONE] })).toEqual(["i3"]);
     expect(ids({ assignee: [NONE, "bob"] })).toEqual(["i2", "i3"]);
+  });
+  it("filtre par cycle, y compris « sans cycle »", () => {
+    const withCycle = [issue("a", { cycleId: "s1" }), issue("b", { cycleId: null })];
+    const run = (cycle: string[]) =>
+      filterIssues(withCycle, { ...EMPTY_FILTERS, cycle }).map((i) => i.id);
+    expect(run(["s1"])).toEqual(["a"]);
+    expect(run([NONE])).toEqual(["b"]);
+    expect(run([])).toEqual(["a", "b"]);
   });
   it("filtre par label", () => {
     expect(ids({ label: ["bug", "feat"] })).toEqual(["i1", "i3"]);

@@ -23,6 +23,8 @@ export function toIssueDTO(issue: IssueWithRelations): IssueDTO {
     assigneeIds: issue.assignees.map((a) => a.userId),
     labelIds: issue.labels.map((l) => l.labelId),
     parentId: issue.parentId,
+    cycleId: issue.cycleId,
+    moduleId: issue.moduleId,
     createdAt: issue.createdAt,
     updatedAt: issue.updatedAt,
   };
@@ -40,7 +42,7 @@ export async function loadIssueDTOs(projectId: string) {
 
 /** États, labels et membres d'un projet. À n'appeler qu'après `requireProject`. */
 export async function loadProjectMeta(project: { id: string; identifier: string; name: string }) {
-  const [states, labels, members] = await Promise.all([
+  const [states, labels, members, cycles, modules] = await Promise.all([
     db.state.findMany({
       where: { projectId: project.id },
       orderBy: { position: "asc" },
@@ -56,6 +58,16 @@ export async function loadProjectMeta(project: { id: string; identifier: string;
       select: { user: { select: { id: true, name: true, avatarUrl: true } } },
       orderBy: { user: { name: "asc" } },
     }),
+    db.cycle.findMany({
+      where: { projectId: project.id },
+      orderBy: { startDate: "desc" },
+      select: { id: true, name: true, startDate: true, endDate: true },
+    }),
+    db.module.findMany({
+      where: { projectId: project.id },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, status: true },
+    }),
   ]);
   return {
     id: project.id,
@@ -64,5 +76,7 @@ export async function loadProjectMeta(project: { id: string; identifier: string;
     states,
     labels,
     members: members.map((m) => m.user),
+    cycles,
+    modules,
   };
 }

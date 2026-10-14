@@ -10,7 +10,9 @@ import { issueTitleSchema } from "@/lib/validators/issue";
 import { useIssuesContext, type NewIssueDefaults } from "./issues-context";
 import {
   AssigneesPicker,
+  CyclePicker,
   DatePicker,
+  ModulePicker,
   LabelsPicker,
   PriorityPicker,
   StatePicker,
@@ -30,7 +32,9 @@ function CreateIssueForm({ defaults, onDone }: { defaults: NewIssueDefaults; onD
   const [assigneeIds, setAssigneeIds] = useState(defaults.assigneeIds ?? []);
   const [labelIds, setLabelIds] = useState(defaults.labelIds ?? []);
   const [startDate, setStartDate] = useState<Date | null>(null);
-  const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [dueDate, setDueDate] = useState<Date | null>(defaults.dueDate ?? null);
+  const [cycleId, setCycleId] = useState<string | null>(defaults.cycleId ?? null);
+  const [moduleId, setModuleId] = useState<string | null>(defaults.moduleId ?? null);
   const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -66,6 +70,8 @@ function CreateIssueForm({ defaults, onDone }: { defaults: NewIssueDefaults; onD
         startDate,
         dueDate,
         parentId: defaults.parentId ?? null,
+        cycleId,
+        moduleId,
       },
       { onError: (e) => setError(e.message) },
     );
@@ -94,6 +100,8 @@ function CreateIssueForm({ defaults, onDone }: { defaults: NewIssueDefaults; onD
           <LabelsPicker variant="full" value={labelIds} onChange={setLabelIds} />
           <DatePicker variant="full" label="Début" value={startDate} onChange={setStartDate} />
           <DatePicker variant="full" label="Échéance" value={dueDate} onChange={setDueDate} />
+          <CyclePicker variant="full" value={cycleId} onChange={setCycleId} />
+          <ModulePicker variant="full" value={moduleId} onChange={setModuleId} />
         </div>
       </div>
       <DialogFooter>

@@ -90,6 +90,8 @@ export type NewIssue = Pick<
   | "startDate"
   | "dueDate"
   | "parentId"
+  | "cycleId"
+  | "moduleId"
 >;
 
 export function useCreateIssue() {
