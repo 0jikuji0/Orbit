@@ -67,7 +67,14 @@ export function useUpdateIssue() {
 
 export type NewIssue = Pick<
   IssueDTO,
-  "title" | "stateId" | "priority" | "assigneeIds" | "labelIds" | "startDate" | "dueDate"
+  | "title"
+  | "stateId"
+  | "priority"
+  | "assigneeIds"
+  | "labelIds"
+  | "startDate"
+  | "dueDate"
+  | "parentId"
 >;
 
 export function useCreateIssue() {

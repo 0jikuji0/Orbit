@@ -23,6 +23,7 @@ function issue(id: string, over: Partial<IssueDTO> = {}): IssueDTO {
     dueDate: null,
     assigneeIds: [],
     labelIds: [],
+    parentId: null,
     createdAt: date,
     updatedAt: date,
     ...over,

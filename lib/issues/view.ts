@@ -1,5 +1,6 @@
 import type { Priority } from "@prisma/client";
 import { PRIORITIES, PRIORITY_LABELS } from "./priority";
+import type { RichNode } from "@/lib/rich-text";
 import type { IssueDTO, ProjectMeta } from "./types";
 
 export const NONE = "none";

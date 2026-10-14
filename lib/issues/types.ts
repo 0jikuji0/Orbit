@@ -12,6 +12,7 @@ export type IssueDTO = {
   dueDate: Date | null;
   assigneeIds: string[];
   labelIds: string[];
+  parentId: string | null;
   createdAt: Date;
   updatedAt: Date;
 };

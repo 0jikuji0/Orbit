@@ -1,8 +1,9 @@
 "use server";
 
-import type { Prisma, Priority } from "@prisma/client";
+import { Prisma, type Priority } from "@prisma/client";
 import { runAction, UserError } from "@/lib/action";
 import { db } from "@/lib/db";
+import { wouldCreateCycle } from "@/lib/issues/hierarchy";
 import { nextSequenceId } from "@/lib/issues/numbering";
 import { sortOrderBetween } from "@/lib/issues/sort-order";
 import { requireProject } from "@/lib/permissions";
@@ -45,6 +46,27 @@ function assertRefs(
   }
 }
 
+/** Le parent doit être une tâche active du même projet, sans créer de boucle. */
+async function assertParent(projectId: string, parentId: string, issueId?: string) {
+  const issues = await db.issue.findMany({
+    where: { projectId, archivedAt: null },
+    select: { id: true, parentId: true, sequenceId: true },
+  });
+  const parent = issues.find((i) => i.id === parentId);
+  if (!parent) throw new UserError("Tâche parente introuvable dans ce projet");
+  if (
+    issueId &&
+    wouldCreateCycle(issueId, parentId, new Map(issues.map((i) => [i.id, i.parentId])))
+  ) {
+    throw new UserError("Une tâche ne peut pas être sa propre sous-tâche");
+  }
+  return parent;
+}
+
+/** Entrées d'historique regroupées : modifications successives du même champ par la même personne. */
+const COALESCE_MS = 10 * 60 * 1000;
+const COALESCED_FIELDS = new Set(["description"]);
+
 // ─── Historique ──────────────────────────────────────────────────────────
 
 const dateText = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
@@ -75,6 +97,8 @@ export async function createIssue(input: unknown) {
     const refs = await projectRefs(project.id);
     assertRefs(refs, data);
 
+    if (data.parentId) await assertParent(project.id, data.parentId);
+
     const defaultState = refs.states.find((s) => s.group === "UNSTARTED") ?? refs.states[0];
     const stateId = data.stateId ?? defaultState?.id;
     if (!stateId) throw new UserError("Le projet n'a aucun état");
@@ -95,6 +119,7 @@ export async function createIssue(input: unknown) {
           priority: data.priority,
           startDate: data.startDate ?? null,
           dueDate: data.dueDate ?? null,
+          parentId: data.parentId ?? null,
           sortOrder: sortOrderBetween(last?.sortOrder, null),
           createdById: user.id,
           assignees: { create: data.assigneeIds.map((userId) => ({ userId })) },
@@ -153,6 +178,30 @@ export async function updateIssue(input: unknown) {
       data.dueDate = patch.dueDate;
       log("dueDate", dateText(before.dueDate), dateText(patch.dueDate));
     }
+    if (patch.descriptionJson !== undefined) {
+      data.descriptionJson = patch.descriptionJson
+        ? (patch.descriptionJson as Prisma.InputJsonValue)
+        : Prisma.DbNull;
+      log("description", null, null);
+    }
+    if (patch.parentId !== undefined && patch.parentId !== current.parentId) {
+      const key = (seq: number) => `${project.identifier}-${seq}`;
+      const oldParent = current.parentId
+        ? await db.issue.findUnique({
+            where: { id: current.parentId },
+            select: { sequenceId: true },
+          })
+        : null;
+      const newParent = patch.parentId
+        ? await assertParent(project.id, patch.parentId, issueId)
+        : null;
+      data.parentId = patch.parentId;
+      log(
+        "parent",
+        oldParent ? key(oldParent.sequenceId) : null,
+        newParent ? key(newParent.sequenceId) : null,
+      );
+    }
     // La position n'est pas un champ métier : pas d'entrée d'historique.
     if (patch.sortOrder !== undefined) data.sortOrder = patch.sortOrder;
 
@@ -187,7 +236,24 @@ export async function updateIssue(input: unknown) {
           data: patch.labelIds!.map((labelId) => ({ issueId, labelId })),
         });
       }
-      if (activities.length) await tx.activity.createMany({ data: activities });
+      for (const activity of activities) {
+        if (COALESCED_FIELDS.has(activity.field)) {
+          const recent = await tx.activity.findFirst({
+            where: {
+              issueId,
+              actorId: user.id,
+              field: activity.field,
+              createdAt: { gt: new Date(Date.now() - COALESCE_MS) },
+            },
+            orderBy: { createdAt: "desc" },
+          });
+          if (recent) {
+            await tx.activity.update({ where: { id: recent.id }, data: { createdAt: new Date() } });
+            continue;
+          }
+        }
+        await tx.activity.create({ data: activity });
+      }
       return tx.issue.update({
         where: { id: issueId },
         // Toucher updatedAt même si seules les relations ont changé.

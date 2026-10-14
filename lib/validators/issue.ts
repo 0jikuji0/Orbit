@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { PRIORITIES } from "@/lib/issues/priority";
+import { richDocSchema } from "@/lib/rich-text";
 
 /** Date sans heure : accepte un `Date` ou « AAAA-MM-JJ », stockée à minuit UTC. */
 const dateOnly = z
@@ -38,6 +39,7 @@ export const createIssueSchema = z
     labelIds: ids.default([]),
     startDate: dateOnly.optional(),
     dueDate: dateOnly.optional(),
+    parentId: z.string().nullable().optional(),
   })
   .refine(datesInOrder, DATE_ORDER_ERROR);
 
@@ -51,6 +53,8 @@ export const issuePatchSchema = z
     startDate: dateOnly,
     dueDate: dateOnly,
     sortOrder: z.number().finite(),
+    descriptionJson: richDocSchema.nullable(),
+    parentId: z.string().nullable(),
   })
   .partial();
 
