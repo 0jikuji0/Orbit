@@ -1,4 +1,7 @@
-# Base de données pour le développement local : docker compose -f docker-compose.dev.yml up -d
+# Base de données pour le développement local : pnpm db:up
+# Projet « orbit-dev » : ne se mélange pas avec le docker-compose.yml de production.
+name: orbit-dev
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -19,3 +22,5 @@ services:
 
 volumes:
   orbit-dev-db:
+    # Nom historique du volume (avant l'ajout de `name: orbit-dev`) : les données sont conservées.
+    name: orbit_orbit-dev-db
