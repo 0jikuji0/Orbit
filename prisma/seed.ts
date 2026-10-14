@@ -98,6 +98,7 @@ async function main() {
         createdById: alice.id,
         assignees: { create: [{ userId: i % 2 === 0 ? alice.id : bob.id }] },
         labels: { create: [{ labelId: label.id }] },
+        activities: { create: { actorId: alice.id, field: "created" } },
       },
     });
   }
