@@ -123,6 +123,7 @@ function IssuesBody({
   }, []);
 
   // Échap : fermer le panneau latéral (si aucun menu ni modale n'est ouvert).
+  // Phase de capture : on regarde avant que Radix ne retire le menu que cette touche ferme.
   useEffect(() => {
     if (!view.peek) return;
     function onKeyDown(e: KeyboardEvent) {
@@ -130,8 +131,8 @@ function IssuesBody({
       if (document.querySelector("[role=dialog],[role=menu],[role=listbox]")) return;
       setView({ peek: null });
     }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [view.peek, setView]);
 
   const scoped = useMemo(() => issues.filter(inScope(scope)), [issues, scope]);

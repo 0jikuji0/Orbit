@@ -14,6 +14,8 @@ import {
 import { storage } from "@/lib/storage";
 import { z } from "zod";
 import { loadIssueDetail, loadTimeline } from "@/server/issues/detail";
+import { notify } from "@/server/notify";
+import { commentNotifications, mentionRecipients } from "@/lib/notifications";
 
 const deleteAttachmentSchema = issueRefSchema.extend({ attachmentId: z.string() });
 
@@ -55,11 +57,40 @@ export async function fetchTimeline(input: unknown) {
 export async function createComment(input: unknown) {
   return runAction(async () => {
     const { workspaceSlug, projectId, issueId, bodyJson } = createCommentSchema.parse(input);
-    const { user } = await requireIssue(workspaceSlug, projectId, issueId, "MEMBER");
-    await db.comment.create({
-      data: { issueId, authorId: user.id, bodyJson: bodyJson as object },
+    const { user, project } = await requireIssue(workspaceSlug, projectId, issueId, "MEMBER");
+    const [issue, members] = await Promise.all([
+      db.issue.findUniqueOrThrow({
+        where: { id: issueId },
+        select: { createdById: true, assignees: { select: { userId: true } } },
+      }),
+      projectMemberIds(project.id),
+    ]);
+    await db.$transaction(async (tx) => {
+      await tx.comment.create({
+        data: { issueId, authorId: user.id, bodyJson: bodyJson as object },
+      });
+      await notify(
+        tx,
+        issueId,
+        user.id,
+        commentNotifications({
+          actorId: user.id,
+          body: bodyJson,
+          assigneeIds: issue.assignees.map((a) => a.userId),
+          creatorId: issue.createdById,
+          projectMemberIds: members,
+        }),
+      );
     });
   });
+}
+
+async function projectMemberIds(projectId: string) {
+  const members = await db.projectMember.findMany({
+    where: { projectId },
+    select: { userId: true },
+  });
+  return members.map((m) => m.userId);
 }
 
 async function findComment(issueId: string, commentId: string) {
@@ -73,12 +104,26 @@ export async function updateComment(input: unknown) {
   return runAction(async () => {
     const { workspaceSlug, projectId, issueId, commentId, bodyJson } =
       updateCommentSchema.parse(input);
-    const { user } = await requireIssue(workspaceSlug, projectId, issueId, "MEMBER");
+    const { user, project } = await requireIssue(workspaceSlug, projectId, issueId, "MEMBER");
     const comment = await findComment(issueId, commentId);
     if (comment.authorId !== user.id) throw new PermissionError();
-    await db.comment.update({
-      where: { id: commentId },
-      data: { bodyJson: bodyJson as RichNode as object, editedAt: new Date() },
+    const mentioned = mentionRecipients(
+      comment.bodyJson as RichNode,
+      bodyJson,
+      user.id,
+      await projectMemberIds(project.id),
+    );
+    await db.$transaction(async (tx) => {
+      await tx.comment.update({
+        where: { id: commentId },
+        data: { bodyJson: bodyJson as object, editedAt: new Date() },
+      });
+      await notify(
+        tx,
+        issueId,
+        user.id,
+        mentioned.map((userId) => ({ userId, type: "MENTIONED" as const })),
+      );
     });
   });
 }

@@ -70,16 +70,17 @@ model User {
   accounts       Account[]
   invitesCreated WorkspaceInvite[]
 
-  workspaces     WorkspaceMember[]
-  projects       ProjectMember[]
-  createdIssues  Issue[]           @relation("IssueCreatedBy")
-  assignedIssues IssueAssignee[]
-  comments       Comment[]
-  activities     Activity[]
-  ledModules     Module[]          @relation("ModuleLead")
-  attachments    Attachment[]
-  savedViews     SavedView[]
-  notifications  Notification[]
+  workspaces        WorkspaceMember[]
+  projects          ProjectMember[]
+  createdIssues     Issue[]           @relation("IssueCreatedBy")
+  assignedIssues    IssueAssignee[]
+  comments          Comment[]
+  activities        Activity[]
+  ledModules        Module[]          @relation("ModuleLead")
+  attachments       Attachment[]
+  savedViews        SavedView[]
+  notifications     Notification[]    @relation("NotificationRecipient")
+  notificationsSent Notification[]    @relation("NotificationActor")
 }
 
 model Workspace {
@@ -237,8 +238,12 @@ model Issue {
   attachments   Attachment[]
   notifications Notification[]
 
+  /// Recherche plein texte (titre + texte de la description), colonne générée par Postgres.
+  search Unsupported("tsvector")? @default(dbgenerated())
+
   @@unique([projectId, sequenceId])
   @@index([projectId, stateId])
+  @@index([search], type: Gin)
 }
 
 model IssueAssignee {
@@ -391,11 +396,14 @@ model Notification {
   id        String           @id @default(cuid())
   userId    String
   issueId   String
+  /// Personne à l'origine de la notification (peut avoir été supprimée).
+  actorId   String?
   type      NotificationType
   readAt    DateTime?
   createdAt DateTime         @default(now())
 
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User  @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor User? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
   issue Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt])

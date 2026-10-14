@@ -75,15 +75,4 @@ export async function requireProject(
   return { user, project, workspace: ws, role, workspaceRole };
 }
 
-/** Filtre Prisma des projets visibles par un utilisateur dans un workspace. */
-export function accessibleProjectsWhere(
-  workspaceId: string,
-  userId: string,
-  workspaceRole: WorkspaceRole,
-) {
-  return {
-    workspaceId,
-    archivedAt: null,
-    ...(hasWorkspaceRole(workspaceRole, "ADMIN") ? {} : { members: { some: { userId } } }),
-  };
-}
+export { accessibleProjectsWhere } from "./project-access";

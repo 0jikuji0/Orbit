@@ -6,6 +6,12 @@ import { runAction, UserError } from "@/lib/action";
 import { db } from "@/lib/db";
 import { wouldCreateCycle } from "@/lib/issues/hierarchy";
 import { nextSequenceId } from "@/lib/issues/numbering";
+import {
+  assignmentRecipients,
+  mentionRecipients,
+  type NotificationDraft,
+} from "@/lib/notifications";
+import type { RichNode } from "@/lib/rich-text";
 import { sortOrderBetween } from "@/lib/issues/sort-order";
 import { requireProject } from "@/lib/permissions";
 import {
@@ -15,6 +21,7 @@ import {
   updateIssueSchema,
 } from "@/lib/validators/issue";
 import { issueDTOInclude, loadIssueDTOs, toIssueDTO } from "@/server/issues/dto";
+import { notify } from "@/server/notify";
 
 // ─── Vérifications d'appartenance au projet (anti-IDOR) ─────────────────
 
@@ -151,6 +158,15 @@ export async function createIssue(input: unknown) {
         include: issueDTOInclude,
       });
     });
+    await notify(
+      db,
+      issue.id,
+      user.id,
+      assignmentRecipients([], data.assigneeIds, user.id).map((userId) => ({
+        userId,
+        type: "ASSIGNED" as const,
+      })),
+    );
     revalidateProject(workspaceSlug, projectId);
     return toIssueDTO(issue);
   });
@@ -256,6 +272,23 @@ export async function updateIssue(input: unknown) {
       );
     }
 
+    const notifications: NotificationDraft[] = [
+      ...(assigneesChanged
+        ? assignmentRecipients(before.assigneeIds, patch.assigneeIds!, user.id).map((userId) => ({
+            userId,
+            type: "ASSIGNED" as const,
+          }))
+        : []),
+      ...(patch.descriptionJson !== undefined
+        ? mentionRecipients(
+            current.descriptionJson as RichNode | null,
+            patch.descriptionJson,
+            user.id,
+            refs.members.map((m) => m.id),
+          ).map((userId) => ({ userId, type: "MENTIONED" as const }))
+        : []),
+    ];
+
     const updated = await db.$transaction(async (tx) => {
       if (assigneesChanged) {
         await tx.issueAssignee.deleteMany({ where: { issueId } });
@@ -287,6 +320,7 @@ export async function updateIssue(input: unknown) {
         }
         await tx.activity.create({ data: activity });
       }
+      await notify(tx, issueId, user.id, notifications);
       return tx.issue.update({
         where: { id: issueId },
         // Toucher updatedAt même si seules les relations ont changé.
