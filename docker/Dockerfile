@@ -25,13 +25,15 @@ RUN DATABASE_URL="postgresql://build:build@localhost:5432/build" \
     BETTER_AUTH_SECRET="build-time-placeholder-secret-0000000" \
     pnpm build
 
-# ─── 3. CLI Prisma seule, pour appliquer les migrations au démarrage ──────
+# ─── 3. Pilote PostgreSQL pour le script de migration ─────────────────────
+# Le script scripts/migrate.mjs remplace `prisma migrate deploy` (même table, mêmes checksums)
+# et évite d'embarquer la CLI Prisma (~130 Mo).
 FROM node:${NODE_VERSION} AS migrator
-# Doit correspondre à la version de `prisma` dans package.json.
-ARG PRISMA_VERSION=6.19.3
-WORKDIR /opt/prisma
+# Doit correspondre à la version de `pg` dans package.json.
+ARG PG_VERSION=8.23.1
+WORKDIR /opt/migrate
 RUN npm init -y >/dev/null \
- && npm install --omit=dev --no-audit --no-fund "prisma@${PRISMA_VERSION}" \
+ && npm install --omit=dev --no-audit --no-fund "pg@${PG_VERSION}" \
  && npm cache clean --force
 
 # ─── 4. Image finale ──────────────────────────────────────────────────────
@@ -49,9 +51,15 @@ RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack 
  && mkdir -p /data/uploads && chown -R node:node /data
 
 COPY --from=build --chown=node:node /app/.next/standalone ./
+# Inutile à l'exécution : moteur Prisma de l'autre architecture, sharp (optimisation d'images
+# désactivée), TypeScript.
+RUN case "$(uname -m)" in aarch64) keep=arm64 ;; *) keep=linux-musl-openssl ;; esac \
+ && find node_modules/.pnpm -name 'libquery_engine-*' ! -name "*${keep}*" -delete \
+ && rm -rf node_modules/.pnpm/@img+sharp* node_modules/.pnpm/sharp@* node_modules/.pnpm/typescript@*
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
-COPY --from=build --chown=node:node /app/prisma ./prisma
-COPY --from=migrator --chown=node:node /opt/prisma /opt/prisma
+COPY --from=build --chown=node:node /app/prisma/migrations ./prisma/migrations
+COPY --from=migrator --chown=node:node /opt/migrate/node_modules /opt/migrate/node_modules
+COPY --chown=node:node scripts/migrate.mjs /opt/migrate/migrate.mjs
 COPY --chown=node:node docker/entrypoint.sh /usr/local/bin/orbit-entrypoint
 
 USER node
