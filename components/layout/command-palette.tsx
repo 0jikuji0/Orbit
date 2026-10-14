@@ -189,7 +189,7 @@ export function CommandPalette({
               </Command.Empty>
 
               {hits.length > 0 && (
-                <Command.Group heading="Tâches" className={groupClass}>
+                <Command.Group heading="Tâches" forceMount className={groupClass}>
                   {hits.map((h) => (
                     <Command.Item
                       key={h.id}
@@ -209,7 +209,7 @@ export function CommandPalette({
               )}
 
               {query.trim() && (
-                <Command.Group heading="Recherche" className={groupClass}>
+                <Command.Group heading="Recherche" forceMount className={groupClass}>
                   <Command.Item
                     forceMount
                     value={`rechercher ${query}`}
