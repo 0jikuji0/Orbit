@@ -66,7 +66,7 @@ const TOOLS = [
     run: (e: Editor) => e.chain().focus().toggleCode().run(),
   },
   {
-    label: "Titre",
+    label: "Titre de section",
     icon: Heading2,
     active: ["heading", { level: 2 }],
     run: (e: Editor) => e.chain().focus().toggleHeading({ level: 2 }).run(),
@@ -171,7 +171,13 @@ export function RichEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: { openOnClick: !editable } }),
       TaskList,
-      TaskItem.configure({ nested: true }),
+      TaskItem.configure({
+        nested: true,
+        a11y: {
+          checkboxLabel: (node, checked) =>
+            `${checked ? "Décocher" : "Cocher"} : ${node.textContent || "élément vide"}`,
+        },
+      }),
       Placeholder.configure({ placeholder: placeholder ?? "" }),
       Mention.configure({
         HTMLAttributes: { class: "mention" },
